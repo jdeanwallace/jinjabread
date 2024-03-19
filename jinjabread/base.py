@@ -111,6 +111,7 @@ class MarkdownPage(Page):
 
     def __init__(self, *, layout_name):
         self.layout_name = layout_name
+        self.markdown = markdown.Markdown(extensions=['full_yaml_metadata'])
 
     def get_output_path(self):
         return super().get_output_path().with_suffix(Path(self.layout_name).suffix)
@@ -123,7 +124,10 @@ class MarkdownPage(Page):
         text = self.site.render_template(
             self.content_path.relative_to(self.site.content_dir).as_posix(), **context
         )
-        context["content"] = markdown.markdown(text)
+        context["content"] = self.markdown.convert(text)
+        metadata = self.markdown.Meta
+        if metadata:
+            context.update(**metadata)
         return context
 
 
@@ -134,9 +138,12 @@ def create_new_project(site_name):
     with content_path.open("w") as file:
         file.write(
             """
+---
+author: me
+---
 # Hello, World!
 This is my new website.
-"""
+""".lstrip()
         )
     layout_path = project_path / "layouts" / "base.html"
     layout_path.parent.mkdir(parents=True)
@@ -152,9 +159,10 @@ This is my new website.
 </head>
 <body>
   {{ content }}
+  <p>Created by {{ author }}.<p>
 </body>
 </html>
-"""
+""".lstrip()
         )
 
 def _prettify_html(text):

@@ -53,6 +53,7 @@ python -m unittest jinjabread.tests
 ### Build
 
 ```bash
+rm -r build dist
 python -m build
 ```
 

@@ -40,15 +40,15 @@ class SiteTest(unittest.TestCase):
         )
         site(prettify_html=False)
 
-        self.assertEqual(
-            "<h1>Hello, World</h1>", Path("public/home.html").read_text()
-        )
-    
+        self.assertEqual("<h1>Hello, World</h1>", Path("public/home.html").read_text())
+
     def test_html_content_extends_layout(self):
         content_path = self.project_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
-            file.write("{% extends 'base.html' %}{% block body %}<p>Blah blah blah</p>{% endblock body %}")
+            file.write(
+                "{% extends 'base.html' %}{% block body %}<p>Blah blah blah</p>{% endblock body %}"
+            )
         layout_path = self.project_dir / "layouts" / "base.html"
         layout_path.parent.mkdir(parents=True, exist_ok=True)
         with layout_path.open("w") as file:
@@ -62,9 +62,10 @@ class SiteTest(unittest.TestCase):
         site(prettify_html=False)
 
         self.assertEqual(
-            "<h1>Hello, World</h1><p>Blah blah blah</p>", Path("public/home.html").read_text()
+            "<h1>Hello, World</h1><p>Blah blah blah</p>",
+            Path("public/home.html").read_text(),
         )
-    
+
     def test_html_content_includes_layout(self):
         content_path = self.project_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
@@ -83,10 +84,11 @@ class SiteTest(unittest.TestCase):
         site(prettify_html=False)
 
         self.assertEqual(
-            "<h1>Hello, World</h1><p>Blah blah blah</p>", Path("public/home.html").read_text()
+            "<h1>Hello, World</h1><p>Blah blah blah</p>",
+            Path("public/home.html").read_text(),
         )
         self.assertFalse(Path("public/message.txt").exists())
-    
+
     def test_html_content_includes_content(self):
         content_path = self.project_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
@@ -105,7 +107,8 @@ class SiteTest(unittest.TestCase):
         site(prettify_html=False)
 
         self.assertEqual(
-            "<h1>Hello, World</h1><p>Blah blah blah</p>", Path("public/home.html").read_text()
+            "<h1>Hello, World</h1><p>Blah blah blah</p>",
+            Path("public/home.html").read_text(),
         )
         self.assertTrue(Path("public/message.txt").exists())
 
@@ -128,23 +131,44 @@ class SiteTest(unittest.TestCase):
         content_path = self.project_dir / "content" / "home.md"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
-            file.write("# Hello, World{# This is a comment #}")
+            file.write(
+                """
+---
+author: John
+---
+# Hello, World! {# This is a comment #}
+This is my story.
+""".lstrip()
+            )
         layout_path = self.project_dir / "layouts" / "base.html"
         layout_path.parent.mkdir(parents=True, exist_ok=True)
         with layout_path.open("w") as file:
-            file.write("{{ content }}{# This is another comment #}")
+            file.write(
+                "{{ content }}{# This is another comment #}<p>Written by {{ author }}.</p>"
+            )
 
         site = jinjabread.Site(
             pages=[
                 jinjabread.MarkdownPage(layout_name="base.html"),
             ]
         )
-        site(prettify_html=False)
+        site()
 
         self.assertEqual(
-            "<h1>Hello, World</h1>", Path("public/home.html").read_text()
+            """
+<h1>
+  Hello, World!
+</h1>
+<p>
+  This is my story.
+</p>
+<p>
+  Written by John.
+</p>
+""".lstrip(),
+            Path("public/home.html").read_text(),
         )
-    
+
     def test_copy_static_content(self):
         content_path = self.project_dir / "content" / "dummy.jpg"
         content_path.parent.mkdir(parents=True, exist_ok=True)
@@ -158,7 +182,7 @@ class SiteTest(unittest.TestCase):
         site()
 
         self.assertTrue(Path("public/dummy.jpg").exists())
-    
+
     def test_copy_static_directory(self):
         static_path = self.project_dir / "static" / "dummy.jpg"
         static_path.parent.mkdir(parents=True, exist_ok=True)
