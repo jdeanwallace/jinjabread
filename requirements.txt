@@ -25,7 +25,9 @@ markdown==3.6
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
-    # via jinja2
+    # via
+    #   jinja2
+    #   werkzeug
 mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.2.0
@@ -56,5 +58,9 @@ urllib3==2.2.1
     # via
     #   requests
     #   twine
+watchdog==4.0.0
+    # via werkzeug
+werkzeug[watchdog]==3.0.1
+    # via -r requirements.ini
 zipp==3.18.1
     # via importlib-metadata

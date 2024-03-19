@@ -136,7 +136,7 @@ class SiteTest(unittest.TestCase):
 
         site = jinjabread.Site(
             pages=[
-                jinjabread.MarkdownPage("base.html"),
+                jinjabread.MarkdownPage(layout_name="base.html"),
             ]
         )
         site()

@@ -6,7 +6,36 @@ An Python-based static site generator using Jinja templates.
 
 Inspired by [`staticjinja`](https://github.com/staticjinja/staticjinja) and [`hugo`](https://github.com/gohugoio/hugo).
 
-## Get started
+## Install
+
+```bash
+pip install jinjabread
+```
+
+## Usage
+
+### Create new jinjabread site
+
+```bash
+python -m jinjabread new mysite
+cd mysite
+```
+
+### Build jinjabread site
+
+```bash
+python -m jinjabread build .
+```
+
+### Run development server
+
+```bash
+python -m jinjabread serve .
+```
+
+## Contributing
+
+### Setup
 
 ```bash
 python -m venv venv && \
@@ -15,14 +44,20 @@ python -m venv venv && \
   pip-sync requirements.txt
 ```
 
-## Test
+### Test
 
 ```bash
 python -m unittest jinjabread.tests
 ```
 
-## Build
+### Build
 
 ```bash
 python -m build
+```
+
+### Release
+
+```bash
+python -m twine upload dist/*
 ```

@@ -8,16 +8,28 @@ import markdown
 
 class Site:
 
-    def __init__(self, *, pages):
-        self.content_dir = Path("content")
-        self.layouts_dir = Path("layouts")
-        self.static_dir = Path("static")
-        self.output_dir = Path("public")
+    def __init__(
+        self,
+        *,
+        pages,
+        project_dir=".",
+        content_dir="content",
+        layouts_dir="layouts",
+        static_dir="static",
+        output_dir="public"
+    ):
+        self.project_dir = Path(project_dir)
+        if not self.project_dir.exists():
+            raise FileNotFoundError("The project directory doesn't exist.")
+        self.content_dir = self.project_dir / content_dir
+        self.layouts_dir = self.project_dir / layouts_dir
+        self.static_dir = self.project_dir / static_dir
+        self.output_dir = self.project_dir / output_dir
         self.env = Environment(
             loader=FileSystemLoader(searchpath=[self.layouts_dir, self.content_dir])
         )
         self.pages = pages
-    
+
     def __call__(self):
         self.generate()
 
@@ -45,10 +57,13 @@ class Site:
             if not page:
                 continue
             page(self, content_path)
-        
+
         if self.static_dir.exists():
-            shutil.copytree(self.static_dir, self.output_dir / self.static_dir.name, dirs_exist_ok=True)
-        
+            shutil.copytree(
+                self.static_dir,
+                self.output_dir / self.static_dir.name,
+                dirs_exist_ok=True,
+            )
 
 
 class Page:
@@ -64,7 +79,7 @@ class Page:
         return self.site.output_dir / self.content_path.relative_to(
             self.site.content_dir
         )
-    
+
     def get_template_name(self):
         return self.content_path.relative_to(self.site.content_dir).as_posix()
 
@@ -88,12 +103,12 @@ class Page:
 class MarkdownPage(Page):
     path_pattern = r".*\.md"
 
-    def __init__(self, layout_name):
+    def __init__(self, *, layout_name):
         self.layout_name = layout_name
-    
+
     def get_output_path(self):
         return super().get_output_path().with_suffix(Path(self.layout_name).suffix)
-    
+
     def get_template_name(self):
         return self.layout_name
 
@@ -104,3 +119,34 @@ class MarkdownPage(Page):
         )
         context["content"] = markdown.markdown(text)
         return context
+
+
+def create_new_project(site_name):
+    project_path = Path(site_name)
+    content_path = project_path / "content" / "index.md"
+    content_path.parent.mkdir(parents=True)
+    with content_path.open("w") as file:
+        file.write(
+            """
+# Hello, World!
+This is my new website.
+"""
+        )
+    layout_path = project_path / "layouts" / "base.html"
+    layout_path.parent.mkdir(parents=True)
+    with layout_path.open("w") as file:
+        file.write(
+            """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jinjabread Website</title>
+</head>
+<body>
+  {{ content }}
+</body>
+</html>
+"""
+        )
