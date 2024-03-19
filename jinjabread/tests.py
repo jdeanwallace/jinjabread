@@ -36,9 +36,9 @@ class SiteTest(unittest.TestCase):
         site = jinjabread.Site(
             pages=[
                 jinjabread.Page(),
-            ]
+            ],
         )
-        site()
+        site(prettify_html=False)
 
         self.assertEqual(
             "<h1>Hello, World</h1>", Path("public/home.html").read_text()
@@ -59,7 +59,7 @@ class SiteTest(unittest.TestCase):
                 jinjabread.Page(),
             ]
         )
-        site()
+        site(prettify_html=False)
 
         self.assertEqual(
             "<h1>Hello, World</h1><p>Blah blah blah</p>", Path("public/home.html").read_text()
@@ -80,7 +80,7 @@ class SiteTest(unittest.TestCase):
                 jinjabread.Page(),
             ]
         )
-        site()
+        site(prettify_html=False)
 
         self.assertEqual(
             "<h1>Hello, World</h1><p>Blah blah blah</p>", Path("public/home.html").read_text()
@@ -102,7 +102,7 @@ class SiteTest(unittest.TestCase):
                 jinjabread.Page(),
             ]
         )
-        site()
+        site(prettify_html=False)
 
         self.assertEqual(
             "<h1>Hello, World</h1><p>Blah blah blah</p>", Path("public/home.html").read_text()
@@ -139,7 +139,7 @@ class SiteTest(unittest.TestCase):
                 jinjabread.MarkdownPage(layout_name="base.html"),
             ]
         )
-        site()
+        site(prettify_html=False)
 
         self.assertEqual(
             "<h1>Hello, World</h1>", Path("public/home.html").read_text()
@@ -156,6 +156,8 @@ class SiteTest(unittest.TestCase):
             ]
         )
         site()
+
+        self.assertTrue(Path("public/dummy.jpg").exists())
     
     def test_copy_static_directory(self):
         static_path = self.project_dir / "static" / "dummy.jpg"

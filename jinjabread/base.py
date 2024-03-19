@@ -2,6 +2,7 @@ from pathlib import Path
 import re
 import shutil
 
+import bs4
 from jinja2 import Environment, FileSystemLoader
 import markdown
 
@@ -30,7 +31,8 @@ class Site:
         )
         self.pages = pages
 
-    def __call__(self):
+    def __call__(self, prettify_html=True):
+        self.prettify_html = prettify_html
         self.generate()
 
     def render_template(self, template_name, **context):
@@ -56,7 +58,7 @@ class Site:
             page = self.match_page(content_path)
             if not page:
                 continue
-            page(self, content_path)
+            page(self, content_path, self.prettify_html)
 
         if self.static_dir.exists():
             shutil.copytree(
@@ -69,10 +71,11 @@ class Site:
 class Page:
     path_pattern = r".*"
 
-    def __call__(self, site, content_path):
+    def __call__(self, site, content_path, prettify_html=True):
         self.site = site
         self.content_path = content_path
         self.output_path = self.get_output_path()
+        self.prettify_html = prettify_html
         self.generate()
 
     def get_output_path(self):
@@ -91,7 +94,10 @@ class Page:
 
     def render(self):
         template_name = self.get_template_name()
-        return self.site.render_template(template_name, **self.get_context())
+        text = self.site.render_template(template_name, **self.get_context())
+        if self.prettify_html and self.output_path.suffix == ".html":
+            return _prettify_html(text)
+        return text
 
     def generate(self):
         text = self.render()
@@ -150,3 +156,7 @@ This is my new website.
 </html>
 """
         )
+
+def _prettify_html(text):
+    soup = bs4.BeautifulSoup(text, "html.parser")
+    return soup.prettify(formatter=bs4.formatter.HTMLFormatter(indent=2))

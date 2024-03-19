@@ -4,6 +4,8 @@
 #
 #    pip-compile requirements.ini
 #
+beautifulsoup4==4.12.3
+    # via -r requirements.ini
 certifi==2024.2.2
     # via requests
 charset-normalizer==3.3.2
@@ -52,6 +54,8 @@ rfc3986==2.0.0
     # via twine
 rich==13.7.1
     # via twine
+soupsieve==2.5
+    # via beautifulsoup4
 twine==5.0.0
     # via -r requirements.ini
 urllib3==2.2.1
