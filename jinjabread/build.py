@@ -1,5 +1,7 @@
-from . import Site, MarkdownPage
+from .base import Site
+from .parsers import Config
 
 
 def build(project_dir):
-    Site(project_dir=project_dir, pages=[MarkdownPage(layout_name="base.html")])()
+    config = Config.load(project_dir)
+    Site(config).generate()

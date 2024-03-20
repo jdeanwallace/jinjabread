@@ -4,7 +4,7 @@ from pathlib import Path
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request, Response
 from werkzeug.utils import redirect
-from . import build
+from .build import build
 
 
 class App:

@@ -1,5 +1,5 @@
+import mimetypes
 from pathlib import Path
-import re
 import shutil
 
 import bs4
@@ -8,95 +8,110 @@ import markdown
 
 
 class Site:
-
-    def __init__(
-        self,
-        *,
-        pages,
-        project_dir=".",
-        content_dir="content",
-        layouts_dir="layouts",
-        static_dir="static",
-        output_dir="public"
-    ):
-        self.project_dir = Path(project_dir)
-        if not self.project_dir.exists():
-            raise FileNotFoundError("The project directory doesn't exist.")
-        self.content_dir = self.project_dir / content_dir
-        self.layouts_dir = self.project_dir / layouts_dir
-        self.static_dir = self.project_dir / static_dir
-        self.output_dir = self.project_dir / output_dir
+    def __init__(self, config):
+        self.config = config
         self.env = Environment(
-            loader=FileSystemLoader(searchpath=[self.layouts_dir, self.content_dir])
+            loader=FileSystemLoader(
+                searchpath=[
+                    self.config.layouts_dir,
+                    self.config.content_dir,
+                ],
+            ),
         )
-        self.pages = pages
-
-    def __call__(self, prettify_html=True):
-        self.prettify_html = prettify_html
-        self.generate()
 
     def render_template(self, template_name, **context):
         template = self.env.get_template(template_name)
         return template.render(context)
 
-    def match_page(self, path):
-        for page in self.pages:
-            if re.match(page.path_pattern, path.name):
-                return page
+    def match_page_factory(self, path):
+        for page_factory in self.config.page_factories:
+            if path.match(page_factory.page_class.glob_pattern):
+                return page_factory
 
     def generate(self):
-        for content_path in self.content_dir.rglob("*"):
+        for content_path in self.config.content_dir.glob("**/*"):
             if content_path.is_dir():
                 continue
-            if content_path.suffix not in [".html", ".md", ".txt"]:
-                output_path = self.output_dir / content_path.relative_to(
-                    self.content_dir
+            mime_type, _ = mimetypes.guess_type(content_path.name)
+            if mime_type and not mime_type.startswith("text/"):
+                output_path = self.config.output_dir / content_path.relative_to(
+                    self.config.content_dir
                 )
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(content_path, output_path)
                 continue
-            page = self.match_page(content_path)
-            if not page:
+            page_factory = self.match_page_factory(content_path)
+            if not page_factory:
                 continue
-            page(self, content_path, self.prettify_html)
+            page = page_factory.new_page(self, content_path)
+            page.generate()
 
-        if self.static_dir.exists():
+        if self.config.static_dir.exists():
             shutil.copytree(
-                self.static_dir,
-                self.output_dir / self.static_dir.name,
+                self.config.static_dir,
+                self.config.output_dir / self.config.static_dir.name,
                 dirs_exist_ok=True,
             )
 
 
-class Page:
-    path_pattern = r".*"
+class PageFactory:
+    def __init__(self, page_class, **initkwargs):
+        self.page_class = page_class
+        self.page_initkwargs = initkwargs
 
-    def __call__(self, site, content_path, prettify_html=True):
+    def new_page(self, site, content_path):
+        page = self.page_class(**self.page_initkwargs)
+        page.setup(site, content_path)
+        return page
+
+
+class Page:
+    glob_pattern = "**/*"
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def setup(self, site, content_path):
         self.site = site
         self.content_path = content_path
         self.output_path = self.get_output_path()
-        self.prettify_html = prettify_html
-        self.generate()
 
     def get_output_path(self):
-        return self.site.output_dir / self.content_path.relative_to(
-            self.site.content_dir
+        return self.site.config.output_dir / self.content_path.relative_to(
+            self.site.config.content_dir
         )
 
     def get_template_name(self):
-        return self.content_path.relative_to(self.site.content_dir).as_posix()
+        return self.content_path.relative_to(self.site.config.content_dir).as_posix()
 
     def get_context(self):
-        path = "/" + self.output_path.relative_to(self.site.output_dir).as_posix()
-        return {
-            "path": path,
+        file_path = self.output_path.relative_to(self.site.config.output_dir)
+        url_path = file_path.with_suffix("")
+        if url_path.name == "index":
+            url_path = url_path.parent
+        context = self.site.config.context | {
+            "file_path": file_path,
+            "url_path": f"/{url_path.as_posix()}",
         }
+        if self.content_path.stem == "index":
+            items = []
+            for path in self.content_path.parent.glob("*"):
+                if path == self.content_path or path.is_dir() or path.stem == "index":
+                    continue
+                page_factory = self.site.match_page_factory(path)
+                if not page_factory:
+                    continue
+                page = page_factory.new_page(self.site, path)
+                items.append(page.get_context())
+            context |= {"pages": items}
+        return context
 
     def render(self):
         template_name = self.get_template_name()
         text = self.site.render_template(template_name, **self.get_context())
-        if self.prettify_html and self.output_path.suffix == ".html":
-            return _prettify_html(text)
+        if self.site.config.prettify_html and self.output_path.suffix == ".html":
+            return prettify_html(text)
         return text
 
     def generate(self):
@@ -107,11 +122,11 @@ class Page:
 
 
 class MarkdownPage(Page):
-    path_pattern = r".*\.md"
+    glob_pattern = "**/*.md"
 
     def __init__(self, *, layout_name):
         self.layout_name = layout_name
-        self.markdown = markdown.Markdown(extensions=['full_yaml_metadata'])
+        self.markdown = markdown.Markdown(extensions=["full_yaml_metadata"])
 
     def get_output_path(self):
         return super().get_output_path().with_suffix(Path(self.layout_name).suffix)
@@ -122,17 +137,29 @@ class MarkdownPage(Page):
     def get_context(self):
         context = super().get_context()
         text = self.site.render_template(
-            self.content_path.relative_to(self.site.content_dir).as_posix(), **context
+            self.content_path.relative_to(self.site.config.content_dir).as_posix(),
+            **context,
         )
         context["content"] = self.markdown.convert(text)
         metadata = self.markdown.Meta
+        self.markdown.reset()
         if metadata:
             context.update(**metadata)
         return context
 
 
-def create_new_project(site_name):
-    project_path = Path(site_name)
+def new(project_dir):
+    project_path = Path(project_dir)
+    config_path = project_path / "jinjabread.toml"
+    config_path.parent.mkdir(parents=True)
+    with config_path.open("w") as file:
+        file.write(
+            f"""
+[context]
+  site_name = "{project_path.name}"
+  site_origin = "https://example.com"
+""".lstrip()
+        )
     content_path = project_path / "content" / "index.md"
     content_path.parent.mkdir(parents=True)
     with content_path.open("w") as file:
@@ -152,19 +179,20 @@ This is my new website.
             """
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jinjabread Website</title>
-</head>
-<body>
-  {{ content }}
-  <p>Created by {{ author }}.<p>
-</body>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ site_name }}</title>
+  </head>
+  <body>
+    {{ content }}
+    <p>Created by {{ author }}.</p>
+  </body>
 </html>
 """.lstrip()
         )
 
-def _prettify_html(text):
+
+def prettify_html(text):
     soup = bs4.BeautifulSoup(text, "html.parser")
     return soup.prettify(formatter=bs4.formatter.HTMLFormatter(indent=2))

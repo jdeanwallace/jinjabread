@@ -1,0 +1,14 @@
+content_dir = "content"
+layouts_dir = "layouts"
+static_dir = "static"
+output_dir = "public"
+prettify_html = true
+
+[context]
+
+[[pages]]
+  type = "jinjabread.MarkdownPage"
+  layout_name = "base.html"
+
+[[pages]]
+  type = "jinjabread.Page"

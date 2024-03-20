@@ -32,15 +32,14 @@ class SiteTest(unittest.TestCase):
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
             file.write("<h1>Hello, World{# This is a comment #}</h1>")
+        config = jinjabread.Config.load(".")
+        config.prettify_html = False
+        site = jinjabread.Site(config)
+        site.generate()
 
-        site = jinjabread.Site(
-            pages=[
-                jinjabread.Page(),
-            ],
+        self.assertEqual(
+            """<h1>Hello, World</h1>""", Path("public/home.html").read_text()
         )
-        site(prettify_html=False)
-
-        self.assertEqual("<h1>Hello, World</h1>", Path("public/home.html").read_text())
 
     def test_html_content_extends_layout(self):
         content_path = self.project_dir / "content" / "home.html"
@@ -54,12 +53,10 @@ class SiteTest(unittest.TestCase):
         with layout_path.open("w") as file:
             file.write("<h1>Hello, World</h1>{% block body %}{% endblock body %}")
 
-        site = jinjabread.Site(
-            pages=[
-                jinjabread.Page(),
-            ]
-        )
-        site(prettify_html=False)
+        config = jinjabread.Config.load(".")
+        config.prettify_html = False
+        site = jinjabread.Site(config)
+        site.generate()
 
         self.assertEqual(
             "<h1>Hello, World</h1><p>Blah blah blah</p>",
@@ -76,12 +73,10 @@ class SiteTest(unittest.TestCase):
         with layout_path.open("w") as file:
             file.write("<p>Blah blah blah</p>")
 
-        site = jinjabread.Site(
-            pages=[
-                jinjabread.Page(),
-            ]
-        )
-        site(prettify_html=False)
+        config = jinjabread.Config.load(".")
+        config.prettify_html = False
+        site = jinjabread.Site(config)
+        site.generate()
 
         self.assertEqual(
             "<h1>Hello, World</h1><p>Blah blah blah</p>",
@@ -99,12 +94,10 @@ class SiteTest(unittest.TestCase):
         with content_path2.open("w") as file:
             file.write("<p>Blah blah blah</p>")
 
-        site = jinjabread.Site(
-            pages=[
-                jinjabread.Page(),
-            ]
-        )
-        site(prettify_html=False)
+        config = jinjabread.Config.load(".")
+        config.prettify_html = False
+        site = jinjabread.Site(config)
+        site.generate()
 
         self.assertEqual(
             "<h1>Hello, World</h1><p>Blah blah blah</p>",
@@ -118,12 +111,9 @@ class SiteTest(unittest.TestCase):
         with content_path.open("w") as file:
             file.write("Hello, World{# This is a comment #}")
 
-        site = jinjabread.Site(
-            pages=[
-                jinjabread.Page(),
-            ]
-        )
-        site()
+        config = jinjabread.Config.load(".")
+        site = jinjabread.Site(config)
+        site.generate()
 
         self.assertEqual("Hello, World", Path("public/home.txt").read_text())
 
@@ -147,12 +137,9 @@ This is my story.
                 "{{ content }}{# This is another comment #}<p>Written by {{ author }}.</p>"
             )
 
-        site = jinjabread.Site(
-            pages=[
-                jinjabread.MarkdownPage(layout_name="base.html"),
-            ]
-        )
-        site()
+        config = jinjabread.Config.load(".")
+        site = jinjabread.Site(config)
+        site.generate()
 
         self.assertEqual(
             """
@@ -174,12 +161,9 @@ This is my story.
         content_path.parent.mkdir(parents=True, exist_ok=True)
         content_path.touch()
 
-        site = jinjabread.Site(
-            pages=[
-                jinjabread.Page(),
-            ]
-        )
-        site()
+        config = jinjabread.Config.load(".")
+        site = jinjabread.Site(config)
+        site.generate()
 
         self.assertTrue(Path("public/dummy.jpg").exists())
 
@@ -188,11 +172,8 @@ This is my story.
         static_path.parent.mkdir(parents=True, exist_ok=True)
         static_path.touch()
 
-        site = jinjabread.Site(
-            pages=[
-                jinjabread.Page(),
-            ]
-        )
-        site()
+        config = jinjabread.Config.load(".")
+        site = jinjabread.Site(config)
+        site.generate()
 
         self.assertTrue(Path("public/static/dummy.jpg").exists())
