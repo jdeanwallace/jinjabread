@@ -14,23 +14,22 @@ pip install jinjabread
 
 ## Usage
 
-### Create new jinjabread site
+### Create new site project
 
 ```bash
 python -m jinjabread new mysite
-cd mysite
 ```
 
-### Build jinjabread site
+### Build site project
 
 ```bash
-python -m jinjabread build .
+python -m jinjabread build mysite
 ```
 
 ### Run development server
 
 ```bash
-python -m jinjabread serve .
+python -m jinjabread serve mysite
 ```
 
 ## Contributing
@@ -47,7 +46,7 @@ python -m venv venv && \
 ### Test
 
 ```bash
-python -m unittest jinjabread.tests
+python -m unittest discover .
 ```
 
 ### Build

@@ -141,10 +141,9 @@ class MarkdownPage(Page):
             **context,
         )
         context["content"] = self.markdown.convert(text)
-        metadata = self.markdown.Meta
+        if self.markdown.Meta:
+            context.update(self.markdown.Meta)
         self.markdown.reset()
-        if metadata:
-            context.update(**metadata)
         return context
 
 
