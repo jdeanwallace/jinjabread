@@ -1,6 +1,7 @@
 from pathlib import Path
 from .config import CONFIG_FILENAME
 
+
 def new(*, project_dir=None):
     suppress_existing_project_dir_error = project_dir is None
 

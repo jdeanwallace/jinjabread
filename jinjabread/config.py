@@ -1,4 +1,3 @@
-
 import dataclasses
 from pathlib import Path
 import tomllib
@@ -24,10 +23,10 @@ class Config:
     @classmethod
     def load(cls, *, project_dir=None, config_file=None):
         suppress_missing_config_file_error = config_file is None
-        
+
         project_dir = Path(project_dir or ".")
         config_file = Path(config_file or CONFIG_FILENAME)
-        
+
         with (Path(__file__).parent / "defaults.toml").open("rb") as file:
             data = tomllib.load(file)
 
