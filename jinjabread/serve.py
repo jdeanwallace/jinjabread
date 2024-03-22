@@ -15,7 +15,7 @@ class App:
 
     def dispatch_request(self, request):
         path = Path(request.path)
-        
+
         if path.name == "index.html":
             return redirect(path.parent)
 
