@@ -25,7 +25,7 @@ jobs:
           command: |
             . venv/bin/activate
             python -m unittest discover .
-  release-build:
+  publish-python-package:
     executor: python
     steps:
       - checkout
@@ -41,14 +41,14 @@ jobs:
           command: python -m build
       - run:
           name: Upload test build
-          command: python -m twine upload --repository testpypi dist/*
+          command: python -m twine upload dist/*
 workflows:
   test:
     jobs:
       - test-python
-  release:
+  publish:
     jobs:
-      - release-build:
+      - publish-python-package:
           context: jinjabread-prod
           filters:
             tags:
