@@ -313,6 +313,44 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
             Path("public/index.html").read_text(),
         )
 
+    def test_markdown_content_with_custom_glob_pattern(self):
+        shutil.copytree(
+            self.test_data_dir / "test_markdown_content_with_custom_glob_pattern",
+            self.working_dir,
+            dirs_exist_ok=True,
+        )
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+        site.generate()
+
+        self.assertHtmlEqual(
+            """
+            <header>This is a header.</header>
+            <main>
+                <h1>Post: My blog post</h1>
+                <p>This is my story.</p>
+                <p>The <strong>end</strong>.</p>
+                <p>Written by John.</p>
+            </main>
+            <footer>This is a footer.</footer>
+            """,
+            Path("public/post1.html").read_text(),
+        )
+        self.assertHtmlEqual(
+            """
+            <header>This is a header.</header>
+            <main>
+                <h1>Article: My article</h1>
+                <p>This is my article.</p>
+                <p>The <strong>end</strong>.</p>
+                <p>Written by Jimmy.</p>
+            </main>
+            <footer>This is a footer.</footer>
+            """,
+            Path("public/article1.html").read_text(),
+        )
+
     def test_copy_static_content(self):
         content_path = self.working_dir / "content" / "dummy.jpg"
         content_path.parent.mkdir(parents=True, exist_ok=True)

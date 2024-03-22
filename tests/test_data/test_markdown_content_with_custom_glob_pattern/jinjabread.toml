@@ -1,0 +1,12 @@
+[[pages]]
+type = "jinjabread.MarkdownPage"
+glob_pattern = "**/post*.md"
+layout_name = "post.html"
+
+[[pages]]
+type = "jinjabread.MarkdownPage"
+glob_pattern = "**/article*.md"
+layout_name = "article.html"
+
+[[pages]]
+type = "jinjabread.Page"

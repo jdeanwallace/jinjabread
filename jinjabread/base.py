@@ -23,10 +23,11 @@ class Site:
         template = self.env.get_template(template_name)
         return template.render(context)
 
-    def match_page_factory(self, path):
+    def match_page(self, content_path):
         for page_factory in self.config.page_factories:
-            if path.match(page_factory.page_class.glob_pattern):
-                return page_factory
+            page = page_factory.make_page(self, content_path)
+            if content_path.match(page.glob_pattern):
+                return page
 
     def generate(self):
         for content_path in self.config.content_dir.glob("**/*"):
@@ -40,10 +41,9 @@ class Site:
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(content_path, output_path)
                 continue
-            page_factory = self.match_page_factory(content_path)
-            if not page_factory:
+            page = self.match_page(content_path)
+            if not page:
                 continue
-            page = page_factory.new_page(self, content_path)
             page.generate()
 
         if self.config.static_dir.exists():
@@ -59,18 +59,15 @@ class PageFactory:
         self.page_class = page_class
         self.page_initkwargs = initkwargs
 
-    def new_page(self, site, content_path):
+    def make_page(self, site, content_path):
         page = self.page_class(**self.page_initkwargs)
         page.setup(site, content_path)
         return page
 
 
 class Page:
-    glob_pattern = "**/*"
-
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+    def __init__(self, *, glob_pattern=None):
+        self.glob_pattern = glob_pattern or "**/*"
 
     def setup(self, site, content_path):
         self.site = site
@@ -99,10 +96,9 @@ class Page:
             for path in self.content_path.parent.glob("*"):
                 if path == self.content_path or path.is_dir() or path.stem == "index":
                     continue
-                page_factory = self.site.match_page_factory(path)
-                if not page_factory:
+                page = self.site.match_page(path)
+                if not page:
                     continue
-                page = page_factory.new_page(self.site, path)
                 items.append(page.get_context())
             context |= {"pages": items}
         return context
@@ -122,11 +118,11 @@ class Page:
 
 
 class MarkdownPage(Page):
-    glob_pattern = "**/*.md"
 
-    def __init__(self, *, layout_name):
+    def __init__(self, *, layout_name, glob_pattern=None):
         self.layout_name = layout_name
         self.markdown = markdown.Markdown(extensions=["full_yaml_metadata"])
+        super().__init__(glob_pattern=glob_pattern or "**/*.md")
 
     def get_output_path(self):
         return super().get_output_path().with_suffix(Path(self.layout_name).suffix)
