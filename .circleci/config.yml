@@ -38,10 +38,14 @@ jobs:
             pip-sync requirements.txt
       - run:
           name: Create build
-          command: python -m build
+          command: |
+            . venv/bin/activate
+            python -m build
       - run:
           name: Upload test build
-          command: python -m twine upload dist/*
+          command: |
+            . venv/bin/activate
+            python -m twine upload dist/*
 workflows:
   test:
     jobs:
@@ -53,3 +57,5 @@ workflows:
           filters:
             tags:
               only: /\d+\.\d+\.\d+.*/
+            branches:
+              ignore: /.*/
