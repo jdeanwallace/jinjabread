@@ -44,7 +44,7 @@ jobs:
             . venv/bin/activate
             python -m build
       - run:
-          name: Upload test build
+          name: Upload build
           command: |
             . venv/bin/activate
             python -m twine upload dist/*
