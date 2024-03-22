@@ -1,8 +1,11 @@
 version: 2.1
-jobs:
-  build-python:
+executors:
+  python:
     docker:
       - image: cimg/python:3.12.1
+jobs:
+  test-python:
+    executor: python
     steps:
       - checkout
       - run:
@@ -22,7 +25,31 @@ jobs:
           command: |
             . venv/bin/activate
             python -m unittest discover .
+  publish-python-package:
+    executor: python
+    steps:
+      - checkout
+      - run:
+          name: Create virtual environment
+          command: |
+            python -m venv venv
+            . venv/bin/activate
+            pip install pip pip-tools --upgrade
+            pip-sync requirements.txt
+      - run:
+          name: Create build
+          command: python -m build
+      - run:
+          name: Upload test build
+          command: python -m twine upload dist/*
 workflows:
   test:
     jobs:
-      - build-python
+      - test-python
+  publish:
+    jobs:
+      - publish-python-package:
+          context: jinjabread-prod
+          filters:
+            tags:
+              only: /\d+\.\d+\.\d+.*/
