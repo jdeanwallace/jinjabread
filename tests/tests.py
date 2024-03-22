@@ -3,21 +3,9 @@ import shutil
 import unittest
 import tempfile
 from pathlib import Path
+from werkzeug.test import Client
 
 import jinjabread
-
-
-def print_tree(dir):
-    for path in Path(dir).rglob("*"):
-        print(path.relative_to(dir).as_posix())
-
-
-def list_files(dir):
-    return [
-        path.relative_to(dir).as_posix()
-        for path in Path(dir).rglob("*")
-        if path.is_file()
-    ]
 
 
 class TestHtmlMixin:
@@ -28,19 +16,21 @@ class TestHtmlMixin:
         )
 
 
-class SiteTest(TestHtmlMixin, unittest.TestCase):
+class TestTempWorkingDirMixin:
 
     def setUp(self):
-        self.project_dir = Path(tempfile.mkdtemp())
-        os.chdir(self.project_dir)
-        self.addCleanup(shutil.rmtree, self.project_dir)
+        super().setUp()
+        self.working_dir = Path(tempfile.mkdtemp())
+        os.chdir(self.working_dir)
+        self.addCleanup(shutil.rmtree, self.working_dir)
 
-        self.test_data_dir = Path(__file__).parent / "test_data"
 
-    def test_site_config_defaults(self):
-        config = jinjabread.Config.load("mysite")
+class ConfigTest(TestTempWorkingDirMixin, unittest.TestCase):
 
-        self.assertEqual("mysite", config.project_dir.name)
+    def test_defaults(self):
+        config = jinjabread.Config.load()
+
+        self.assertTrue(self.working_dir.name, config.project_dir.name)
         self.assertEqual("content", config.content_dir.name)
         self.assertEqual("layouts", config.layouts_dir.name)
         self.assertEqual("static", config.static_dir.name)
@@ -56,8 +46,53 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
             [x.page_class for x in config.page_factories],
         )
 
+    def test_with_custom_project_directory(self):
+        config = jinjabread.Config.load(project_dir="mysite")
+
+        self.assertTrue("mysite", config.project_dir.name)
+
+    def test_config_with_missing_config_file(self):
+        with self.assertRaises(FileNotFoundError):
+            jinjabread.Config.load(config_file="missing.toml")
+
+    def test_with_custom_config_file(self):
+        with (self.working_dir / "custom.toml").open("w") as file:
+            file.write(
+                """
+                output_dir = "dist"
+
+                [context]
+                  foo = "bar"
+                """
+            )
+
+        config = jinjabread.Config.load(config_file="custom.toml")
+
+        self.assertEqual("dist", config.output_dir.name)
+        self.assertDictEqual({"foo": "bar"}, config.context)
+
+    def test_ignore_unexpected_config(self):
+        with (self.working_dir / "custom.toml").open("w") as file:
+            file.write(
+                """
+                foo = "bar"
+
+                [custom]
+                  foo = "bar"
+                """
+            )
+
+        jinjabread.Config.load(config_file="custom.toml")
+
+
+class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.test_data_dir = Path(__file__).parent / "test_data"
+
     def test_html_content(self):
-        content_path = self.project_dir / "content" / "home.html"
+        content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
             file.write(
@@ -65,9 +100,8 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 <h1>Hello, World{# This is a comment #}</h1>
                 """
             )
-        config = jinjabread.Config.load(".")
-        site = jinjabread.Site(config)
-        site.generate()
+
+        jinjabread.build()
 
         self.assertHtmlEqual(
             """
@@ -77,7 +111,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
         )
 
     def test_html_content_extends_layout(self):
-        content_path = self.project_dir / "content" / "home.html"
+        content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
             file.write(
@@ -88,7 +122,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 {% endblock body %}
                 """
             )
-        layout_path = self.project_dir / "layouts" / "base.html"
+        layout_path = self.working_dir / "layouts" / "base.html"
         layout_path.parent.mkdir(parents=True, exist_ok=True)
         with layout_path.open("w") as file:
             file.write(
@@ -99,9 +133,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 """
             )
 
-        config = jinjabread.Config.load(".")
-        site = jinjabread.Site(config)
-        site.generate()
+        jinjabread.build()
 
         self.assertHtmlEqual(
             """
@@ -112,7 +144,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
         )
 
     def test_html_content_includes_layout(self):
-        content_path = self.project_dir / "content" / "home.html"
+        content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
             file.write(
@@ -121,7 +153,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 {% include 'message.txt' %}
                 """
             )
-        layout_path = self.project_dir / "layouts" / "message.txt"
+        layout_path = self.working_dir / "layouts" / "message.txt"
         layout_path.parent.mkdir(parents=True, exist_ok=True)
         with layout_path.open("w") as file:
             file.write(
@@ -130,9 +162,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 """
             )
 
-        config = jinjabread.Config.load(".")
-        site = jinjabread.Site(config)
-        site.generate()
+        jinjabread.build()
 
         self.assertHtmlEqual(
             """
@@ -144,7 +174,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
         self.assertFalse(Path("public/message.txt").exists())
 
     def test_html_content_includes_content(self):
-        content_path = self.project_dir / "content" / "home.html"
+        content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
             file.write(
@@ -153,7 +183,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 {% include 'message.txt' %}
                 """
             )
-        content_path2 = self.project_dir / "content" / "message.txt"
+        content_path2 = self.working_dir / "content" / "message.txt"
         content_path2.parent.mkdir(parents=True, exist_ok=True)
         with content_path2.open("w") as file:
             file.write(
@@ -162,9 +192,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 """
             )
 
-        config = jinjabread.Config.load(".")
-        site = jinjabread.Site(config)
-        site.generate()
+        jinjabread.build()
 
         self.assertHtmlEqual(
             """
@@ -176,27 +204,23 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
         self.assertTrue(Path("public/message.txt").exists())
 
     def test_text_content(self):
-        content_path = self.project_dir / "content" / "home.txt"
+        content_path = self.working_dir / "content" / "home.txt"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
             file.write("""Hello, World{# This is a comment #}""")
 
-        config = jinjabread.Config.load(".")
-        site = jinjabread.Site(config)
-        site.generate()
+        jinjabread.build()
 
         self.assertEqual("""Hello, World""", Path("public/home.txt").read_text())
 
     def test_markdown_content(self):
         shutil.copytree(
             self.test_data_dir / "test_markdown_content",
-            self.project_dir,
+            self.working_dir,
             dirs_exist_ok=True,
         )
 
-        config = jinjabread.Config.load(".")
-        site = jinjabread.Site(config)
-        site.generate()
+        jinjabread.build()
 
         self.assertHtmlEqual(
             """
@@ -213,7 +237,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
         )
 
     def test_directory_index_html_content(self):
-        content_path = self.project_dir / "content" / "posts" / "index.html"
+        content_path = self.working_dir / "content" / "posts" / "index.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
             file.write(
@@ -224,21 +248,21 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 {% endfor %}
                 """
             )
-        content_path = self.project_dir / "content" / "posts" / "post1.html"
+        content_path = self.working_dir / "content" / "posts" / "post1.html"
         with content_path.open("w") as file:
             file.write(
                 """
                 <p>I am post 1.</p>
                 """
             )
-        content_path = self.project_dir / "content" / "posts" / "post2.html"
+        content_path = self.working_dir / "content" / "posts" / "post2.html"
         with content_path.open("w") as file:
             file.write(
                 """
                 <p>I am post 2.</p>
                 """
             )
-        content_path = self.project_dir / "content" / "posts" / "post3.html"
+        content_path = self.working_dir / "content" / "posts" / "post3.html"
         with content_path.open("w") as file:
             file.write(
                 """
@@ -246,9 +270,7 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
                 """
             )
 
-        config = jinjabread.Config.load(".")
-        site = jinjabread.Site(config)
-        site.generate()
+        jinjabread.build()
 
         self.assertHtmlEqual(
             """
@@ -263,11 +285,11 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
     def test_directory_index_markdown_content(self):
         shutil.copytree(
             self.test_data_dir / "test_directory_index_markdown_content",
-            self.project_dir,
+            self.working_dir,
             dirs_exist_ok=True,
         )
 
-        config = jinjabread.Config.load(".")
+        config = jinjabread.Config.load()
         site = jinjabread.Site(config)
         site.generate()
 
@@ -292,23 +314,92 @@ class SiteTest(TestHtmlMixin, unittest.TestCase):
         )
 
     def test_copy_static_content(self):
-        content_path = self.project_dir / "content" / "dummy.jpg"
+        content_path = self.working_dir / "content" / "dummy.jpg"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         content_path.touch()
 
-        config = jinjabread.Config.load(".")
-        site = jinjabread.Site(config)
-        site.generate()
+        jinjabread.build()
 
         self.assertTrue(Path("public/dummy.jpg").exists())
 
     def test_copy_static_directory(self):
-        static_path = self.project_dir / "static" / "dummy.jpg"
+        static_path = self.working_dir / "static" / "dummy.jpg"
         static_path.parent.mkdir(parents=True, exist_ok=True)
         static_path.touch()
 
-        config = jinjabread.Config.load(".")
+        jinjabread.build()
+
+        self.assertTrue(Path("public/static/dummy.jpg").exists())
+
+
+class NewSiteTest(TestTempWorkingDirMixin, unittest.TestCase):
+
+    def test_defaults(self):
+        jinjabread.new()
+
+        self.assertTrue(Path("jinjabread.toml").exists())
+        self.assertTrue(Path("content").exists())
+        self.assertTrue(Path("layouts").exists())
+
+    def test_with_custom_project_directory(self):
+        jinjabread.new(project_dir="mysite")
+
+        self.assertTrue(Path("mysite").exists())
+        self.assertTrue(Path("mysite/jinjabread.toml").exists())
+        self.assertTrue(Path("mysite/content").exists())
+        self.assertTrue(Path("mysite/layouts").exists())
+
+
+class ServeSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
+
+    def test_response(self):
+        index_file = self.working_dir / "content" / "index.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
         site = jinjabread.Site(config)
         site.generate()
 
-        self.assertTrue(Path("public/static/dummy.jpg").exists())
+        client = Client(jinjabread.App(config))
+        response = client.get("/")
+
+        self.assertEqual(200, response.status_code)
+        self.assertDictEqual(
+            {
+                "Content-Type": "text/html; charset=utf-8",
+                "Content-Length": "0",
+            },
+            dict(response.headers),
+        )
+        self.assertHtmlEqual("", response.get_data(as_text=True))
+
+    def test_redirect_index_path(self):
+        index_file = self.working_dir / "content" / "index.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+        site.generate()
+
+        client = Client(jinjabread.App(config))
+        response = client.get("/index.html")
+
+        self.assertEqual(302, response.status_code)
+        self.assertEqual("/", response.headers.get("Location"))
+
+    def test_redirect_path_with_suffix(self):
+        index_file = self.working_dir / "content" / "about.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+        site.generate()
+
+        client = Client(jinjabread.App(config))
+        response = client.get("/about.html")
+
+        self.assertEqual(302, response.status_code)
+        self.assertEqual("/about", response.headers.get("Location"))

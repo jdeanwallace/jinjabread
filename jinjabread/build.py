@@ -1,7 +1,8 @@
 from .base import Site
-from .parsers import Config
+from .config import Config
 
 
-def build(project_dir):
-    config = Config.load(project_dir)
-    Site(config).generate()
+def build(**kwargs):
+    config = Config.load(**kwargs)
+    site = Site(config)
+    site.generate()

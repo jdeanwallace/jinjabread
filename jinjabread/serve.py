@@ -4,20 +4,25 @@ from pathlib import Path
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request, Response
 from werkzeug.utils import redirect
-from .build import build
+from .base import Site
+from .config import Config
 
 
 class App:
 
-    def __init__(self, project_dir):
-        self.public_dir = Path(project_dir) / "public"
+    def __init__(self, config):
+        self.config = config
 
     def dispatch_request(self, request):
         path = Path(request.path)
+        
+        if path.name == "index.html":
+            return redirect(path.parent)
+
         if path.suffix == ".html":
             return redirect(path.with_suffix(""))
 
-        file_path = self.public_dir / path.relative_to("/")
+        file_path = self.config.output_dir / path.relative_to("/")
         if (not file_path.exists() or file_path.is_dir()) and file_path.with_suffix(
             ".html"
         ).exists():
@@ -45,21 +50,24 @@ class App:
         return self.wsgi_app(environ, start_response)
 
 
-def serve(project_dir):
-    build(project_dir)
+def serve(**kwargs):
+    config = Config.load(**kwargs)
+    site = Site(config)
+    site.generate()
+
     extra_files = [
         path.as_posix()
         for path in itertools.chain(
-            Path(f"{project_dir}/content").rglob("*"),
-            Path(f"{project_dir}/layouts").rglob("*"),
-            Path(f"{project_dir}/static").rglob("*"),
+            config.content_dir.glob("**/*"),
+            config.layouts_dir.glob("**/*"),
+            config.static_dir.glob("**/*"),
         )
         if path.is_file()
     ]
     run_simple(
         "127.0.0.1",
         8000,
-        App(project_dir),
+        App(config),
         use_reloader=True,
         extra_files=extra_files,
     )

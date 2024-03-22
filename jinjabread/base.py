@@ -1,10 +1,10 @@
 import mimetypes
 from pathlib import Path
 import shutil
-
-import bs4
 from jinja2 import Environment, FileSystemLoader
 import markdown
+
+from .utils import prettify_html
 
 
 class Site:
@@ -145,53 +145,3 @@ class MarkdownPage(Page):
             context.update(self.markdown.Meta)
         self.markdown.reset()
         return context
-
-
-def new(project_dir):
-    project_path = Path(project_dir)
-    config_path = project_path / "jinjabread.toml"
-    config_path.parent.mkdir(parents=True)
-    with config_path.open("w") as file:
-        file.write(
-            f"""
-[context]
-  site_name = "{project_path.name}"
-  site_origin = "https://example.com"
-""".lstrip()
-        )
-    content_path = project_path / "content" / "index.md"
-    content_path.parent.mkdir(parents=True)
-    with content_path.open("w") as file:
-        file.write(
-            """
----
-author: me
----
-# Hello, World!
-This is my new website.
-""".lstrip()
-        )
-    layout_path = project_path / "layouts" / "base.html"
-    layout_path.parent.mkdir(parents=True)
-    with layout_path.open("w") as file:
-        file.write(
-            """
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ site_name }}</title>
-  </head>
-  <body>
-    {{ content }}
-    <p>Created by {{ author }}.</p>
-  </body>
-</html>
-""".lstrip()
-        )
-
-
-def prettify_html(text):
-    soup = bs4.BeautifulSoup(text, "html.parser")
-    return soup.prettify(formatter=bs4.formatter.HTMLFormatter(indent=2))

@@ -1,18 +1,13 @@
-import contextlib
+
 import dataclasses
-import importlib
 from pathlib import Path
 import tomllib
 import typing
 from .base import PageFactory
+from .utils import load_page_class
 
 
-def load_page_class(dot_path):
-    parts = dot_path.rsplit(".", 2)
-    if len(parts) != 2:
-        raise TypeError("Invalid page type.")
-    module = importlib.import_module(parts[0])
-    return getattr(module, parts[1])
+CONFIG_FILENAME = "jinjabread.toml"
 
 
 @dataclasses.dataclass
@@ -27,15 +22,21 @@ class Config:
     page_factories: typing.List[PageFactory]
 
     @classmethod
-    def load(cls, project_dir):
-        project_dir = Path(project_dir)
+    def load(cls, *, project_dir=None, config_file=None):
+        suppress_missing_config_file_error = config_file is None
+        
+        project_dir = Path(project_dir or ".")
+        config_file = Path(config_file or CONFIG_FILENAME)
         
         with (Path(__file__).parent / "defaults.toml").open("rb") as file:
             data = tomllib.load(file)
 
-        with contextlib.suppress(FileNotFoundError):
-            with (project_dir / "jinjabread.toml").open("rb") as file:
+        try:
+            with config_file.open("rb") as file:
                 data |= tomllib.load(file)
+        except FileNotFoundError:
+            if not suppress_missing_config_file_error:
+                raise
 
         page_factories = []
         for page_kwargs in data.get("pages", []):
