@@ -13,6 +13,11 @@ jobs:
             pip install pip pip-tools --upgrade
             pip-sync requirements.txt
       - run:
+          name: Check style
+          command: |
+            . venv/bin/activate
+            black --check .
+      - run:
           name: Run tests
           command: |
             . venv/bin/activate
