@@ -47,12 +47,12 @@ jobs:
             . venv/bin/activate
             python -m twine upload dist/*
 workflows:
-  test:
+  main:
     jobs:
       - test-python
-  publish:
-    jobs:
       - publish-python-package:
+          requires:
+            - test-python
           context: jinjabread-prod
           filters:
             tags:
