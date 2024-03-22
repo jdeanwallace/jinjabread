@@ -53,8 +53,8 @@ workflows:
     jobs:
       - test-python:
           filters:
-              tags:
-                only: *semver_pattern
+            tags:
+              only: *semver_pattern
       - publish-python-package:
           context:
             - jinjabread-prod
