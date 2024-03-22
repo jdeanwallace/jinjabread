@@ -52,12 +52,11 @@ python -m unittest discover .
 ### Build
 
 ```bash
-rm -r build dist
 python -m build
 ```
 
 ### Release
 
 ```bash
-python -m twine upload dist/*
+env $(cat .env.prod | xargs) python -m twine upload dist/*
 ```
