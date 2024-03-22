@@ -1,4 +1,6 @@
 version: 2.1
+_definitions:
+  - &semver_pattern /^\d+\.\d+\.\d+.*/
 executors:
   python:
     docker:
@@ -49,13 +51,17 @@ jobs:
 workflows:
   main:
     jobs:
-      - test-python
+      - test-python:
+          filters:
+              tags:
+                only: *semver_pattern
       - publish-python-package:
+          context:
+            - jinjabread-prod
           requires:
             - test-python
-          context: jinjabread-prod
           filters:
             tags:
-              only: /[0-9]+\.[0-9]+\.[0-9]+.*/
+              only: *semver_pattern
             branches:
               ignore: /.*/
