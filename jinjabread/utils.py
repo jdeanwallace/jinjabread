@@ -20,4 +20,6 @@ def find_index_file(path):
         if not index_path.is_file():
             continue
         return index_path
-    raise FileNotFoundError(f"Index file not found: {(path / "index.*").relative_to(path).as_posix()}")
+    raise FileNotFoundError(
+        f"Index file not found: {(path / 'index.*').relative_to(path).as_posix()}"
+    )
