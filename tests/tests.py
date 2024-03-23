@@ -25,6 +25,49 @@ class TestTempWorkingDirMixin:
         self.addCleanup(shutil.rmtree, self.working_dir)
 
 
+class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
+    def test_find_index_file_with_empty_directory(self):
+        with self.assertRaises(FileNotFoundError) as ctx:
+            jinjabread.find_index_file(self.working_dir)
+        self.assertEqual("Index file not found: index.*", str(ctx.exception))
+
+    def test_find_index_file_with_missing_index_file(self):
+        (self.working_dir / "post1.html").touch()
+        (self.working_dir / "post2.html").touch()
+
+        with self.assertRaises(FileNotFoundError) as ctx:
+            jinjabread.find_index_file(self.working_dir)
+        self.assertEqual("Index file not found: index.*", str(ctx.exception))
+
+    def test_find_index_file(self):
+        (self.working_dir / "index.html").touch()
+
+        self.assertEqual(
+            self.working_dir / "index.html",
+            jinjabread.find_index_file(self.working_dir),
+        )
+
+    def test_find_index_file_with_other_files(self):
+        (self.working_dir / "index.html").touch()
+        (self.working_dir / "post1.html").touch()
+        (self.working_dir / "post2.html").touch()
+
+        self.assertEqual(
+            self.working_dir / "index.html",
+            jinjabread.find_index_file(self.working_dir),
+        )
+
+    def test_find_index_file_with_any_suffix(self):
+        (self.working_dir / "index.md").touch()
+        (self.working_dir / "post1.html").touch()
+        (self.working_dir / "post2.html").touch()
+
+        self.assertEqual(
+            self.working_dir / "index.md",
+            jinjabread.find_index_file(self.working_dir),
+        )
+
+
 class ConfigTest(TestTempWorkingDirMixin, unittest.TestCase):
 
     def test_defaults(self):
@@ -285,6 +328,38 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
     def test_directory_index_markdown_content(self):
         shutil.copytree(
             self.test_data_dir / "test_directory_index_markdown_content",
+            self.working_dir,
+            dirs_exist_ok=True,
+        )
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+        site.generate()
+
+        self.assertHtmlEqual(
+            """
+            <header>This is a header.</header>
+            <main>
+                <h1>Look on my Works, ye Mighty, and despair!</h1>
+                <h2>Post 1</h2>
+                <p>I am post 1.</p>
+                <hr/>
+                <h2>Post 2</h2>
+                <p>I am post 2.</p>
+                <hr/>
+                <h2>Post 3</h2>
+                <p>I am post 3.</p>
+                <hr/>
+            </main>
+            <footer>This is a footer.</footer>
+            """,
+            Path("public/index.html").read_text(),
+        )
+
+    def test_directory_index_markdown_content_with_directory_siblings(self):
+        shutil.copytree(
+            self.test_data_dir
+            / "test_directory_index_markdown_content_with_directory_siblings",
             self.working_dir,
             dirs_exist_ok=True,
         )

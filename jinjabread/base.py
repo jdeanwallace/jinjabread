@@ -4,7 +4,8 @@ import shutil
 from jinja2 import Environment, FileSystemLoader
 import markdown
 
-from .utils import prettify_html
+from . import errors
+from .utils import prettify_html, find_index_file
 
 
 class Site:
@@ -23,11 +24,12 @@ class Site:
         template = self.env.get_template(template_name)
         return template.render(context)
 
-    def match_page(self, content_path):
+    def match_page(self, path):
         for page_factory in self.config.page_factories:
-            page = page_factory.make_page(self, content_path)
-            if content_path.match(page.glob_pattern):
+            page = page_factory.make_page(self, path)
+            if path.match(page.glob_pattern):
                 return page
+        raise errors.PageNotMatchedError(f"No page matched: {path.as_posix()}")
 
     def generate(self):
         for content_path in self.config.content_dir.glob("**/*"):
@@ -41,8 +43,9 @@ class Site:
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(content_path, output_path)
                 continue
-            page = self.match_page(content_path)
-            if not page:
+            try:
+                page = self.match_page(content_path)
+            except errors.NoPageMatchedError:
                 continue
             page.generate()
 
@@ -82,6 +85,26 @@ class Page:
     def get_template_name(self):
         return self.content_path.relative_to(self.site.config.content_dir).as_posix()
 
+    def _get_sibling_context_list(self):
+        context_list = []
+        for path in self.content_path.parent.iterdir():
+            if path == self.content_path:
+                continue
+            if path.is_dir():
+                try:
+                    index_path = find_index_file(path)
+                    page = self.site.match_page(index_path)
+                except (FileNotFoundError, errors.NoPageMatchedError):
+                    continue
+                context_list.append(page.get_context())
+                continue
+            try:
+                page = self.site.match_page(path)
+            except errors.NoPageMatchedError:
+                continue
+            context_list.append(page.get_context())
+        return context_list
+
     def get_context(self):
         file_path = self.output_path.relative_to(self.site.config.output_dir)
         url_path = file_path.with_suffix("")
@@ -92,15 +115,7 @@ class Page:
             "url_path": f"/{url_path.as_posix()}",
         }
         if self.content_path.stem == "index":
-            items = []
-            for path in self.content_path.parent.glob("*"):
-                if path == self.content_path or path.is_dir() or path.stem == "index":
-                    continue
-                page = self.site.match_page(path)
-                if not page:
-                    continue
-                items.append(page.get_context())
-            context |= {"pages": items}
+            context["pages"] = self._get_sibling_context_list()
         return context
 
     def render(self):
