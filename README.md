@@ -1,8 +1,11 @@
 # jinjabread
 
+[![CircleCI](https://img.shields.io/circleci/build/gh/jdeanwallace/jinjabread)](https://circleci.com/gh/jdeanwallace/jinjabread)
+[![License](https://img.shields.io/:license-mit-blue.svg)](LICENSE)
+
 **WORK IN PROGRESS**
 
-An Python-based static site generator using Jinja templates.
+A Python-based static site generator using Jinja templates.
 
 Inspired by [`staticjinja`](https://github.com/staticjinja/staticjinja) and [`hugo`](https://github.com/gohugoio/hugo).
 
