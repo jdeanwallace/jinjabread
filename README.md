@@ -1,6 +1,8 @@
-# jinjabread
+# Jinjabread
 
 [![CircleCI](https://img.shields.io/circleci/build/gh/jdeanwallace/jinjabread)](https://circleci.com/gh/jdeanwallace/jinjabread)
+[![GitHub release](https://img.shields.io/github/v/release/jdeanwallace/jinjabread)](https://github.com/jdeanwallace/jinjabread/releases)
+[![PyPI downloads](https://img.shields.io/pypi/dm/jinjabread)](https://pypi.org/project/jinjabread/)
 [![License](https://img.shields.io/:license-mit-blue.svg)](LICENSE)
 
 **WORK IN PROGRESS**
