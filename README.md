@@ -58,5 +58,7 @@ python -m build
 ### Release
 
 ```bash
-env $(cat .env.prod | xargs) python -m twine upload dist/*
+export TWINE_USERNAME='__token__'
+export TWINE_PASSWORD='secret-token'
+python -m twine upload dist/*
 ```

@@ -26,7 +26,11 @@ jobs:
           name: Run tests
           command: |
             . venv/bin/activate
-            python -m unittest discover .
+            coverage run --source jinjabread -m unittest discover .
+            coverage report
+            coverage html
+      - store_artifacts:
+          path: htmlcov
   publish-python-package:
     executor: python
     steps:
