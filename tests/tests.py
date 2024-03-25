@@ -11,6 +11,7 @@ import jinjabread
 class TestHtmlMixin:
 
     def assertHtmlEqual(self, first, second):
+        self.maxDiff = None
         return self.assertEqual(
             jinjabread.prettify_html(first), jinjabread.prettify_html(second)
         )
@@ -375,12 +376,15 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
                 <h1>Look on my Works, ye Mighty, and despair!</h1>
                 <h2>Post 1</h2>
                 <p>I am post 1.</p>
+                <p>Read more <a href="/post1/">here</a>.</p>
                 <hr/>
                 <h2>Post 2</h2>
                 <p>I am post 2.</p>
+                <p>Read more <a href="/post2/">here</a>.</p>
                 <hr/>
                 <h2>Post 3</h2>
                 <p>I am post 3.</p>
+                <p>Read more <a href="/post3/">here</a>.</p>
                 <hr/>
             </main>
             <footer>This is a footer.</footer>

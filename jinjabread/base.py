@@ -107,12 +107,13 @@ class Page:
 
     def get_context(self):
         file_path = self.output_path.relative_to(self.site.config.output_dir)
-        url_path = file_path.with_suffix("")
-        if url_path.name == "index":
-            url_path = url_path.parent
+        if file_path.stem == "index":
+            url_path = "/" + file_path.parent.as_posix() + "/"
+        else:
+            url_path = "/" + file_path.with_suffix("").as_posix()
         context = self.site.config.context | {
-            "file_path": file_path,
-            "url_path": f"/{url_path.as_posix()}",
+            "file_path": file_path.as_posix(),
+            "url_path": url_path,
         }
         if self.content_path.stem == "index":
             context["pages"] = self._get_sibling_context_list()
