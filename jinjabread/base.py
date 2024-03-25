@@ -106,13 +106,13 @@ class Page:
         return context_list
 
     def get_context(self):
-        file_path = self.output_path.relative_to(self.site.config.output_dir)
-        if file_path.stem == "index":
-            url_path = "/" + file_path.parent.as_posix() + "/"
+        relative_path = self.output_path.relative_to(self.site.config.output_dir)
+        if relative_path.stem == "index":
+            url_path = "/" + relative_path.parent.as_posix() + "/"
         else:
-            url_path = "/" + file_path.with_suffix("").as_posix()
+            url_path = "/" + relative_path.with_suffix("").as_posix()
         context = self.site.config.context | {
-            "file_path": file_path.as_posix(),
+            "file_path": relative_path.as_posix(),
             "url_path": url_path,
         }
         if self.content_path.stem == "index":
