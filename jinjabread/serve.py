@@ -14,18 +14,19 @@ class App:
         self.config = config
 
     def dispatch_request(self, request):
-        path = Path(request.path)
+        url_path = Path(request.path)
+        file_path = self.config.output_dir / url_path.relative_to("/")
 
-        if path.name == "index.html":
-            return redirect(path.parent)
+        # Clean up URL path.
+        if url_path.name == "index.html":
+            return redirect(url_path.parent.as_posix().removesuffix("/") + "/")
+        if url_path.suffix == ".html":
+            return redirect(url_path.with_suffix("").as_posix())
+        if file_path.is_dir() and not request.path.endswith("/"):
+            return redirect(url_path.as_posix() + "/")
 
-        if path.suffix == ".html":
-            return redirect(path.with_suffix(""))
-
-        file_path = self.config.output_dir / path.relative_to("/")
-        if (not file_path.exists() or file_path.is_dir()) and file_path.with_suffix(
-            ".html"
-        ).exists():
+        # Clean up file path.
+        if not file_path.exists() and file_path.with_suffix(".html").exists():
             file_path = file_path.with_suffix(".html")
         elif file_path.is_dir():
             file_path /= "index.html"

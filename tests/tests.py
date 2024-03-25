@@ -487,7 +487,7 @@ class ServeSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         )
         self.assertHtmlEqual("", response.get_data(as_text=True))
 
-    def test_redirect_index_path(self):
+    def test_redirect_root_index_path(self):
         index_file = self.working_dir / "content" / "index.html"
         index_file.parent.mkdir(parents=True)
         index_file.touch()
@@ -501,6 +501,21 @@ class ServeSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
 
         self.assertEqual(302, response.status_code)
         self.assertEqual("/", response.headers.get("Location"))
+
+    def test_redirect_dir_index_path(self):
+        index_file = self.working_dir / "content" / "posts" / "index.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+        site.generate()
+
+        client = Client(jinjabread.App(config))
+        response = client.get("/posts/index.html")
+
+        self.assertEqual(302, response.status_code)
+        self.assertEqual("/posts/", response.headers.get("Location"))
 
     def test_redirect_path_with_suffix(self):
         index_file = self.working_dir / "content" / "about.html"
@@ -516,3 +531,18 @@ class ServeSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
 
         self.assertEqual(302, response.status_code)
         self.assertEqual("/about", response.headers.get("Location"))
+
+    def test_redirect_dir_path_with_missing_slash(self):
+        index_file = self.working_dir / "content" / "posts" / "index.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+        site.generate()
+
+        client = Client(jinjabread.App(config))
+        response = client.get("/posts")
+
+        self.assertEqual(302, response.status_code)
+        self.assertEqual("/posts/", response.headers.get("Location"))
