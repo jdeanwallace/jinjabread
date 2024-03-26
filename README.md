@@ -92,15 +92,15 @@ mysite/
 
 ### Example: File to URL translation
 
-| File path                             | URL path |
-| ---                                   |----------|
-| `public/index.html`                   | `/` |
-| `public/about.html`                   | `/about` |
-| `public/posts/index.html`             | `/posts/` |
-| `public/posts/my-story.html`          | `/posts/my-story` |
-| `public/posts/my-journey/index.html`  | `/posts/my-journey/` |
-| `public/posts/my-journey/photo.jpg`   | `/posts/my-journey/profile-photo.jpg` |
-| `public/static/style.css`             | `/static/style.css` |
+| File path                                     | URL path |
+| ---                                           |----------|
+| `public/index.html`                           | `/` |
+| `public/about.html`                           | `/about` |
+| `public/posts/index.html`                     | `/posts/` |
+| `public/posts/my-story.html`                  | `/posts/my-story` |
+| `public/posts/my-journey/index.html`          | `/posts/my-journey/` |
+| `public/posts/my-journey/profile-photo.jpg`   | `/posts/my-journey/profile-photo.jpg` |
+| `public/static/style.css`                     | `/static/style.css` |
 
 
 ## Site config
