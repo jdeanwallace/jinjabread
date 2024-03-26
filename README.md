@@ -179,7 +179,7 @@ output_dir = "dist"
   glob_pattern = "**/*"
 ```
 
-## Pages type
+## Pages types
 
 | Page type | Keyword arguments |
 | --- | --- |
