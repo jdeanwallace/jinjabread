@@ -512,6 +512,76 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
             html_page.get_context(),
         )
 
+    def test_context_variables_on_root_index_page(self):
+        index_file = self.working_dir / "content" / "index.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+
+        index_page = site.match_page(Path("content/index.html"))
+        self.assertDictEqual(
+            {
+                "file_path": "index.html",
+                "url_path": "/",
+                "pages": [],
+            },
+            index_page.get_context(),
+        )
+
+    def test_context_variables_on_dir_index_page(self):
+        index_file = self.working_dir / "content" / "posts" / "index.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+
+        index_page = site.match_page(Path("content/posts/index.html"))
+        self.assertDictEqual(
+            {
+                "file_path": "posts/index.html",
+                "url_path": "/posts/",
+                "pages": [],
+            },
+            index_page.get_context(),
+        )
+
+    def test_context_variables_on_root_page(self):
+        index_file = self.working_dir / "content" / "about.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+
+        index_page = site.match_page(Path("content/about.html"))
+        self.assertDictEqual(
+            {
+                "file_path": "about.html",
+                "url_path": "/about",
+            },
+            index_page.get_context(),
+        )
+
+    def test_context_variables_on_dir_page(self):
+        index_file = self.working_dir / "content" / "posts" / "post1.html"
+        index_file.parent.mkdir(parents=True)
+        index_file.touch()
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+
+        index_page = site.match_page(Path("content/posts/post1.html"))
+        self.assertDictEqual(
+            {
+                "file_path": "posts/post1.html",
+                "url_path": "/posts/post1",
+            },
+            index_page.get_context(),
+        )
+
 
 class NewSiteTest(TestTempWorkingDirMixin, unittest.TestCase):
 

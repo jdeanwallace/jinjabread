@@ -108,10 +108,12 @@ class Page:
 
     def get_context(self):
         relative_path = self.output_path.relative_to(self.site.config.output_dir)
-        if relative_path.stem == "index":
-            url_path = "/" + relative_path.parent.as_posix() + "/"
-        else:
+        if not relative_path.stem == "index":
             url_path = "/" + relative_path.with_suffix("").as_posix()
+        elif not relative_path.parent.name:
+            url_path = "/"
+        else:
+            url_path = "/" + relative_path.parent.as_posix() + "/"
         context = (
             self.site.config.context
             | self.context
