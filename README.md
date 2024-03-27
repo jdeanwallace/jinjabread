@@ -186,6 +186,53 @@ output_dir = "dist"
 | [`jinjabread.Page`](jinjabread/base.py#L71) | - `glob_pattern` |
 | [`jinjabread.MarkdownPage`](jinjabread/base.py#L136) | - `glob_pattern` <br> - `layout_name` |
 
+### Markdown pages
+
+Markdown content supports [full YAML metadata](https://github.com/sivakov512/python-markdown-full-yaml-metadata).
+
+For example, given the following content and layout:
+
+```yaml
+---
+# content/my-blog-post.md
+title: My blog post
+author: John Smith
+description: A very nice story.
+keywords:
+  - thrilling
+  - must-read
+---
+It was a cold stormy night...
+```
+
+```html
+<!-- layouts/base.html -->
+<h1>{{ title }}</h1>
+<h2>{{ description }}</h2>
+<h3>Written by {{ author }}</h3>
+<p>{{ content }}</p>
+```
+
+Results in the following output:
+
+```html
+<!-- public/my-blog-post.html -->
+<h1>
+  My blog post
+</h1>
+<h2>
+  A very nice story.
+</h2>
+<h3>
+  Written by John Smith
+</h3>
+<p>
+  <p>
+    It was a cold stormy night...
+  </p>
+</p>
+```
+
 ## Context variables
 
 ### Default variables
