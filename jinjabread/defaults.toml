@@ -8,7 +8,7 @@ prettify_html = true
 
 [[pages]]
   type = "jinjabread.MarkdownPage"
-  layout_name = "base.html"
+  layout_name = "markdown.html"
 
 [[pages]]
   type = "jinjabread.Page"

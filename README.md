@@ -74,7 +74,7 @@ mysite/
 │       └── my-story.html
 ├── jinjabread.toml
 ├── layouts
-│   └── base.html
+│   └── markdown.html
 ├── public
 │   ├── about.html
 │   ├── index.html
@@ -119,7 +119,7 @@ prettify_html = true
 [[pages]]
   type = "jinjabread.MarkdownPage"
   glob_pattern = "**/*.md"
-  layout_name = "base.html"
+  layout_name = "markdown.html"
 
 [[pages]]
   type = "jinjabread.Page"
@@ -165,7 +165,7 @@ output_dir = "dist"
 [[pages]]
   type = "jinjabread.MarkdownPage"
   glob_pattern = "**/*.md"
-  layout_name = "base.html"
+  layout_name = "markdown.html"
 
 [[pages]]
   type = "jinjabread.Page"
@@ -206,7 +206,7 @@ It was a cold stormy night...
 ```
 
 ```html
-<!-- layouts/base.html -->
+<!-- layouts/markdown.html -->
 <h1>{{ title }}</h1>
 <h2>{{ description }}</h2>
 <h3>Written by {{ author }}</h3>

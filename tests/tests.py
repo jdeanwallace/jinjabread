@@ -160,13 +160,13 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         with content_path.open("w") as file:
             file.write(
                 """
-                {% extends 'base.html' %}
+                {% extends 'markdown.html' %}
                 {% block body %}
                 <p>Blah blah blah</p>
                 {% endblock body %}
                 """
             )
-        layout_path = self.working_dir / "layouts" / "base.html"
+        layout_path = self.working_dir / "layouts" / "markdown.html"
         layout_path.parent.mkdir(parents=True, exist_ok=True)
         with layout_path.open("w") as file:
             file.write(

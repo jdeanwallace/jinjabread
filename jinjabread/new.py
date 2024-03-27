@@ -29,7 +29,7 @@ author: me
 This is my new website.
 """.lstrip()
         )
-    layout_file = project_dir / "layouts" / "base.html"
+    layout_file = project_dir / "layouts" / "markdown.html"
     layout_file.parent.mkdir(parents=True)
     with layout_file.open("w") as file:
         file.write(
