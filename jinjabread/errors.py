@@ -2,5 +2,5 @@ class Error(Exception):
     pass
 
 
-class NoPageMatchedError(Error):
+class PageNotMatchedError(Error):
     pass

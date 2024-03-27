@@ -45,7 +45,7 @@ class Site:
                 continue
             try:
                 page = self.match_page(content_path)
-            except errors.NoPageMatchedError:
+            except errors.PageNotMatchedError:
                 continue
             page.generate()
 
@@ -69,8 +69,9 @@ class PageFactory:
 
 
 class Page:
-    def __init__(self, *, glob_pattern=None):
+    def __init__(self, *, glob_pattern=None, context=None):
         self.glob_pattern = glob_pattern or "**/*"
+        self.context = context or {}
 
     def setup(self, site, content_path):
         self.site = site
@@ -94,13 +95,13 @@ class Page:
                 try:
                     index_path = find_index_file(path)
                     page = self.site.match_page(index_path)
-                except (FileNotFoundError, errors.NoPageMatchedError):
+                except (FileNotFoundError, errors.PageNotMatchedError):
                     continue
                 context_list.append(page.get_context())
                 continue
             try:
                 page = self.site.match_page(path)
-            except errors.NoPageMatchedError:
+            except errors.PageNotMatchedError:
                 continue
             context_list.append(page.get_context())
         return context_list
@@ -111,10 +112,14 @@ class Page:
             url_path = "/" + relative_path.parent.as_posix() + "/"
         else:
             url_path = "/" + relative_path.with_suffix("").as_posix()
-        context = self.site.config.context | {
-            "file_path": relative_path.as_posix(),
-            "url_path": url_path,
-        }
+        context = (
+            self.site.config.context
+            | self.context
+            | {
+                "file_path": relative_path.as_posix(),
+                "url_path": url_path,
+            }
+        )
         if self.content_path.stem == "index":
             context["pages"] = self._get_sibling_context_list()
         return context
@@ -135,10 +140,10 @@ class Page:
 
 class MarkdownPage(Page):
 
-    def __init__(self, *, layout_name, glob_pattern=None):
+    def __init__(self, *, layout_name, glob_pattern=None, **kwargs):
         self.layout_name = layout_name
         self.markdown = markdown.Markdown(extensions=["full_yaml_metadata"])
-        super().__init__(glob_pattern=glob_pattern or "**/*.md")
+        super().__init__(glob_pattern=glob_pattern or "**/*.md", **kwargs)
 
     def get_output_path(self):
         return super().get_output_path().with_suffix(Path(self.layout_name).suffix)

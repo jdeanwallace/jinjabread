@@ -448,6 +448,70 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
 
         self.assertTrue(Path("public/static/dummy.jpg").exists())
 
+    def test_context_variable_precedence(self):
+        with (self.working_dir / "jinjabread.toml").open("w") as file:
+            file.write(
+                """
+                [context]
+                  fee = "fie"
+                  foe = "fum"
+
+                [[pages]]
+                  type = "jinjabread.Page"
+                  glob_pattern = "**/*.txt"
+
+                  [pages.context]
+                    foe = "foo"
+
+                [[pages]]
+                  type = "jinjabread.Page"
+                  glob_pattern = "**/*.csv"
+
+                  [pages.context]
+                    foe = "bar"
+                
+                [[pages]]
+                  type = "jinjabread.Page"
+                  glob_pattern = "**/*.html"
+                """
+            )
+
+        config = jinjabread.Config.load()
+        site = jinjabread.Site(config)
+
+        txt_page = site.match_page(Path("content/test.txt"))
+        self.assertDictEqual(
+            {
+                "file_path": "test.txt",
+                "url_path": "/test",
+                "fee": "fie",
+                "foe": "foo",
+            },
+            txt_page.get_context(),
+        )
+
+        csv_page = site.match_page(Path("content/test.csv"))
+        self.assertDictEqual(
+            {
+                "file_path": "test.csv",
+                "url_path": "/test",
+                "fee": "fie",
+                "foe": "bar",
+            },
+            csv_page.get_context(),
+        )
+
+        html_page = site.match_page(Path("content/test.html"))
+        self.assertDictEqual(
+            {
+                "file_path": "test.html",
+                "url_path": "/test",
+                "fee": "fie",
+                "foe": "fum",
+            },
+            html_page.get_context(),
+        )
+
 
 class NewSiteTest(TestTempWorkingDirMixin, unittest.TestCase):
 
