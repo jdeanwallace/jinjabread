@@ -25,7 +25,7 @@ class Config:
         suppress_missing_config_file_error = config_file is None
 
         project_dir = Path(project_dir or ".")
-        config_file = Path(config_file or CONFIG_FILENAME)
+        config_file = project_dir / Path(config_file or CONFIG_FILENAME)
 
         with (Path(__file__).parent / "defaults.toml").open("rb") as file:
             data = tomllib.load(file)
