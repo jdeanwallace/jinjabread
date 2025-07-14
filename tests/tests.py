@@ -447,6 +447,26 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         jinjabread.build()
 
         self.assertTrue(Path("public/static/dummy.jpg").exists())
+    
+    def test_ignore_hidden_file(self):
+        content_path = self.working_dir / "content" / ".hidden-file"
+        content_path.parent.mkdir(parents=True, exist_ok=True)
+        with content_path.open("w") as file:
+            file.write("Hello, World!")
+
+        jinjabread.build()
+
+        self.assertFalse(Path("public/.hidden-file").exists())
+    
+    def test_ignore_hidden_directory(self):
+        content_path = self.working_dir / "content" / ".hidden-directory" / "message.txt"
+        content_path.parent.mkdir(parents=True, exist_ok=True)
+        with content_path.open("w") as file:
+            file.write("Hello, World!")
+
+        jinjabread.build()
+
+        self.assertFalse(Path("public/.hidden-directory/message.txt").exists())
 
     def test_context_variable_precedence(self):
         with (self.working_dir / "jinjabread.toml").open("w") as file:

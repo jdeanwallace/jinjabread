@@ -35,6 +35,9 @@ class Site:
         for content_path in self.config.content_dir.glob("**/*"):
             if content_path.is_dir():
                 continue
+            # Ignore hidden files and directories.
+            if any(part.startswith(".") for part in content_path.parts):
+                continue
             mime_type, _ = mimetypes.guess_type(content_path.name)
             if mime_type and not mime_type.startswith("text/"):
                 output_path = self.config.output_dir / content_path.relative_to(
