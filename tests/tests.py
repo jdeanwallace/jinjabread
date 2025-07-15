@@ -547,7 +547,9 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         content_path.touch()
 
         # Hidden directories and their contents should be ignored.
-        content_path = self.working_dir / "content" / ".hidden-directory" / "message.txt"
+        content_path = (
+            self.working_dir / "content" / ".hidden-directory" / "message.txt"
+        )
         content_path.parent.mkdir(parents=True)
         content_path.touch()
 
@@ -579,7 +581,9 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         content_path.touch()
 
         # Hidden directories and their contents should be ignored.
-        content_path = self.working_dir / "content" / "posts" / ".hidden-directory" / "message.txt"
+        content_path = (
+            self.working_dir / "content" / "posts" / ".hidden-directory" / "message.txt"
+        )
         content_path.parent.mkdir(parents=True)
         content_path.touch()
 
