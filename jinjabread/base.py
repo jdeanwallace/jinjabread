@@ -94,6 +94,9 @@ class Page:
         for path in self.content_path.parent.iterdir():
             if path == self.content_path:
                 continue
+            # Ignore hidden files and directories.
+            if any(part.startswith(".") for part in path.parts):
+                continue
             if path.is_dir():
                 try:
                     index_path = find_index_file(path)

@@ -535,73 +535,101 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         )
 
     def test_context_variables_on_root_index_page(self):
-        index_file = self.working_dir / "content" / "index.html"
-        index_file.parent.mkdir(parents=True)
-        index_file.touch()
+        content_path = self.working_dir / "content" / "index.html"
+        content_path.parent.mkdir(parents=True)
+        content_path.touch()
+
+        content_path = self.working_dir / "content" / "about.html"
+        content_path.touch()
+
+        # Hidden files should be ignored.
+        content_path = self.working_dir / "content" / ".hidden-file"
+        content_path.touch()
+
+        # Hidden directories and their contents should be ignored.
+        content_path = self.working_dir / "content" / ".hidden-directory" / "message.txt"
+        content_path.parent.mkdir(parents=True)
+        content_path.touch()
 
         config = jinjabread.Config.load()
         site = jinjabread.Site(config)
 
-        index_page = site.match_page(Path("content/index.html"))
+        content_page = site.match_page(Path("content/index.html"))
         self.assertDictEqual(
             {
                 "file_path": "index.html",
                 "url_path": "/",
-                "pages": [],
+                "pages": [
+                    {"file_path": "about.html", "url_path": "/about"},
+                ],
             },
-            index_page.get_context(),
+            content_page.get_context(),
         )
 
     def test_context_variables_on_dir_index_page(self):
-        index_file = self.working_dir / "content" / "posts" / "index.html"
-        index_file.parent.mkdir(parents=True)
-        index_file.touch()
+        content_path = self.working_dir / "content" / "posts" / "index.html"
+        content_path.parent.mkdir(parents=True)
+        content_path.touch()
+
+        content_path = self.working_dir / "content" / "posts" / "post1.html"
+        content_path.touch()
+
+        # Hidden files should be ignored.
+        content_path = self.working_dir / "content" / "posts" / ".hidden-file"
+        content_path.touch()
+
+        # Hidden directories and their contents should be ignored.
+        content_path = self.working_dir / "content" / "posts" / ".hidden-directory" / "message.txt"
+        content_path.parent.mkdir(parents=True)
+        content_path.touch()
 
         config = jinjabread.Config.load()
         site = jinjabread.Site(config)
 
-        index_page = site.match_page(Path("content/posts/index.html"))
+        content_page = site.match_page(Path("content/posts/index.html"))
         self.assertDictEqual(
             {
                 "file_path": "posts/index.html",
                 "url_path": "/posts/",
-                "pages": [],
+                "pages": [
+                    {"file_path": "posts/post1.html", "url_path": "/posts/post1"},
+                ],
             },
-            index_page.get_context(),
+            content_page.get_context(),
         )
 
     def test_context_variables_on_root_page(self):
-        index_file = self.working_dir / "content" / "about.html"
-        index_file.parent.mkdir(parents=True)
-        index_file.touch()
+        content_path = self.working_dir / "content" / "about.html"
+        content_path.parent.mkdir(parents=True)
+        content_path.touch()
 
         config = jinjabread.Config.load()
         site = jinjabread.Site(config)
 
-        index_page = site.match_page(Path("content/about.html"))
+        content_page = site.match_page(Path("content/about.html"))
         self.assertDictEqual(
             {
                 "file_path": "about.html",
                 "url_path": "/about",
             },
-            index_page.get_context(),
+            content_page.get_context(),
         )
 
     def test_context_variables_on_dir_page(self):
-        index_file = self.working_dir / "content" / "posts" / "post1.html"
-        index_file.parent.mkdir(parents=True)
-        index_file.touch()
+        content_path = self.working_dir / "content" / "posts" / "post1.html"
+        content_path.parent.mkdir(parents=True)
+        content_path.touch()
 
         config = jinjabread.Config.load()
         site = jinjabread.Site(config)
 
-        index_page = site.match_page(Path("content/posts/post1.html"))
+        content_page = site.match_page(Path("content/posts/post1.html"))
         self.assertDictEqual(
             {
                 "file_path": "posts/post1.html",
                 "url_path": "/posts/post1",
             },
-            index_page.get_context(),
+            content_page.get_context(),
         )
 
 
