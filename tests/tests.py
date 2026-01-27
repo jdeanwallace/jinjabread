@@ -67,77 +67,77 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
             self.working_dir / "index.md",
             jinjabread.find_index_file(self.working_dir),
         )
-    
+
     def test_prettify_html_inline_tag(self):
         text = """<span>Hello</span>"""
         self.assertEqual(
-"""
+            """
 <span>Hello</span>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_inline_tag_tail(self):
         text = """
         <div><span>Hello</span>.</div>
         """
         self.assertEqual(
-"""
+            """
 <div>
   <span>Hello</span>.
 </div>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_nested_inline_tag(self):
         text = """<span><span>Hello, World!</span></span>"""
         self.assertEqual(
-"""
+            """
 <span><span>Hello, World!</span></span>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_nested_inline_tags(self):
         text = """<span><span>Hello, World!</span><span>Hello, Earth!</span></span>"""
         self.assertEqual(
-"""
+            """
 <span><span>Hello, World!</span><span>Hello, Earth!</span></span>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_block_tag(self):
         text = """
         <p>Hello, World!</p>
         """
         self.assertEqual(
-"""
+            """
 <p>
   Hello, World!
 </p>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_block_tag_tail(self):
         text = """<div><div>Hello, World</div>!</div>"""
         self.assertEqual(
-"""
+            """
 <div>
   <div>
     Hello, World
   </div>!
 </div>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_nested_block_tag(self):
         text = """<div><p>Hello, World!</p><p>Hello, Earth!</p></div>"""
         self.assertEqual(
-"""
+            """
 <div>
   <p>
     Hello, World!
@@ -147,25 +147,27 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
   </p>
 </div>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_inline_tag_wraps_block_tag(self):
         text = """<a href="#home"><div>Hello, World!</div></a>"""
         self.assertEqual(
-"""
+            """
 <a href="#home">
   <div>
     Hello, World!
   </div></a>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_inline_tag_wraps_block_tags(self):
-        text = """<a href="#home"><div>Hello, World!</div><div>Hello, Earth!</div></a>"""
+        text = (
+            """<a href="#home"><div>Hello, World!</div><div>Hello, Earth!</div></a>"""
+        )
         self.assertEqual(
-"""
+            """
 <a href="#home">
   <div>
     Hello, World!
@@ -174,13 +176,13 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
     Hello, Earth!
   </div></a>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_inline_tag_wraps_mixed_tags(self):
         text = """<a href="#home"><div>Hello, World!</div><span>Hello, Mars!</span><div>Hello, Earth!</div></a>"""
         self.assertEqual(
-"""
+            """
 <a href="#home">
   <div>
     Hello, World!
@@ -190,80 +192,80 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
     Hello, Earth!
   </div></a>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_inline_tag_wraps_raw_node(self):
         text = """<span><!-- Hello, World! --></span>"""
         self.assertEqual(
-"""
+            """
 <span><!-- Hello, World! --></span>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_inline_tag_wraps_raw_nodes(self):
         text = """<span><!-- Hello, World! --><!-- Hello, Earth! --></span>"""
         self.assertEqual(
-"""
+            """
 <span><!-- Hello, World! --><!-- Hello, Earth! --></span>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_block_tag_wraps_inline_tag(self):
         text = """<div><span>Hello, World!</span></div>"""
         self.assertEqual(
-"""
+            """
 <div>
   <span>Hello, World!</span>
 </div>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_block_tag_wraps_inline_tags(self):
         text = """<div><span>Hello,</span><span>World!</span></div>"""
         self.assertEqual(
-"""
+            """
 <div>
   <span>Hello,</span><span>World!</span>
 </div>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_void_tag(self):
         text = """<hr/>"""
         self.assertEqual(
-"""
+            """
 <hr/>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_block_tag_wraps_raw_node(self):
         text = """<div><!-- Hello, World! --></div>"""
         self.assertEqual(
-"""
+            """
 <div>
   <!-- Hello, World! -->
 </div>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html_block_tag_wraps_raw_nodes(self):
         text = """<div><!-- Hello, World! --><!-- Hello, Earth! --></div>"""
         self.assertEqual(
-"""
+            """
 <div>
   <!-- Hello, World! --><!-- Hello, Earth! -->
 </div>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
     def test_prettify_html5(self):
         text = """
 <!DOCTYPE html>
@@ -279,7 +281,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 </html>
 """
         self.assertEqual(
-"""
+            """
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -293,9 +295,10 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
   </body>
 </html>
 """.strip(),
-            jinjabread.prettify_html(text)
+            jinjabread.prettify_html(text),
         )
-    
+
+
 #     def test_prettify_html_anchor(self):
 #         content_path = self.working_dir / "content" / "home.html"
 #         content_path.parent.mkdir(parents=True, exist_ok=True)
@@ -307,7 +310,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 #             )
 
 #         jinjabread.build()
-        
+
 #         self.assertEqual(
 # """
 # <p>
