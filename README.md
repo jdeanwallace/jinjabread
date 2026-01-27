@@ -330,7 +330,7 @@ python -m venv venv && \
 ### Test
 
 ```bash
-python -m unittest discover .
+python -m unittest
 ```
 
 ### Build
