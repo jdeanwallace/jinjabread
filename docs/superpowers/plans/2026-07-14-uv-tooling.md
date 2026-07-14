@@ -14,8 +14,8 @@
 
 This is branch `prettifier/1-uv-tooling`, the base of the improvement stack. Before starting:
 
-- The `0.6.4` inline-element bugfix has merged to `master` and been tagged/released. That bugfix is separate work; this stack builds on top of it.
-- `prettifier/0-design` (this plan plus `docs/design/2026-07-13-html-prettifier-improvements.md`) has merged to `master`.
+- The `0.6.4` inline-element bugfix is folded into the `prettify-html` base branch; this stack builds on top of it.
+- `prettifier/0-design` (this plan plus the spec `docs/superpowers/specs/2026-07-13-html-prettifier-improvements-design.md`) sits below this branch.
 - Cut `prettifier/1-uv-tooling` from `prettifier/0-design`.
 - `uv` is installed locally (`pip install uv` or see https://docs.astral.sh/uv/getting-started/installation/), and the repo has git history/tags available so setuptools_scm can resolve the version.
 
