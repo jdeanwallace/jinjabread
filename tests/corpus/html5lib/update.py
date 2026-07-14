@@ -2,23 +2,22 @@
 """Roll the vendored html5lib-tests serializer corpus forward.
 
 Re-downloads the serializer `*.test` files (and the LICENSE) from html5lib-tests
-at a given ref, records the resolved commit in SOURCE.md, and reports what
-changed. Run it by hand, then review the diff and run the suite before
-committing — a bump is a deliberate dependency roll, not something the everyday
-test run does over the network.
+at a given ref, records the resolved commit in `COMMIT`, and reports what changed.
+Run it by hand, then review the diff and run the suite before committing — a bump
+is a deliberate dependency roll, not something the everyday test run does over the
+network.
 
-    python3 dev-scripts/update_html5lib_corpus.py             # latest master
-    python3 dev-scripts/update_html5lib_corpus.py --ref v1.1  # a tag or commit SHA
+    python3 tests/corpus/html5lib/update.py             # latest master
+    python3 tests/corpus/html5lib/update.py --ref v1.1  # a tag or commit SHA
 """
 
 import argparse
 import json
-import re
 import urllib.request
 from pathlib import Path
 
 REPO = "html5lib/html5lib-tests"
-CORPUS_DIR = Path(__file__).resolve().parent.parent / "tests" / "corpus" / "html5lib"
+CORPUS_DIR = Path(__file__).resolve().parent
 DATA_DIR = CORPUS_DIR / "data"
 
 
@@ -52,10 +51,7 @@ def download(sha, path_in_repo, destination):
 
 
 def record_commit(sha):
-    readme = CORPUS_DIR / "README.md"
-    readme.write_text(
-        re.sub(r"Commit: `[0-9a-f]+`", f"Commit: `{sha}`", readme.read_text())
-    )
+    (CORPUS_DIR / "COMMIT").write_text(f"{sha}\n")
 
 
 def main():
