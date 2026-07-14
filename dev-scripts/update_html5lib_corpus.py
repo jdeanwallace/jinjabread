@@ -19,6 +19,7 @@ from pathlib import Path
 
 REPO = "html5lib/html5lib-tests"
 CORPUS_DIR = Path(__file__).resolve().parent.parent / "tests" / "corpus" / "html5lib"
+DATA_DIR = CORPUS_DIR / "data"
 
 
 def _fetch(url):
@@ -51,9 +52,9 @@ def download(sha, path_in_repo, destination):
 
 
 def record_commit(sha):
-    source = CORPUS_DIR / "SOURCE.md"
-    source.write_text(
-        re.sub(r"Commit: `[0-9a-f]+`", f"Commit: `{sha}`", source.read_text())
+    readme = CORPUS_DIR / "README.md"
+    readme.write_text(
+        re.sub(r"Commit: `[0-9a-f]+`", f"Commit: `{sha}`", readme.read_text())
     )
 
 
@@ -68,19 +69,20 @@ def main():
     print(f"Resolved {args.ref} -> {sha}")
 
     upstream = list_serializer_tests(sha)
-    local = {path.name for path in CORPUS_DIR.glob("*.test")}
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    local = {path.name for path in DATA_DIR.glob("*.test")}
 
     for name in upstream:
-        before = (CORPUS_DIR / name).read_bytes() if name in local else None
-        download(sha, f"serializer/{name}", CORPUS_DIR / name)
-        after = (CORPUS_DIR / name).read_bytes()
+        before = (DATA_DIR / name).read_bytes() if name in local else None
+        download(sha, f"serializer/{name}", DATA_DIR / name)
+        after = (DATA_DIR / name).read_bytes()
         status = (
             "unchanged" if before == after else "added" if before is None else "updated"
         )
         print(f"  {name}: {status}")
 
     for name in local - set(upstream):
-        (CORPUS_DIR / name).unlink()
+        (DATA_DIR / name).unlink()
         print(f"  {name}: removed (gone upstream)")
 
     download(sha, "LICENSE", CORPUS_DIR / "LICENSE")
