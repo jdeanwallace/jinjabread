@@ -1,3 +1,13 @@
+"""jinjabread's own HTML pretty-printer.
+
+`prettify_html` re-serializes generated HTML with readable indentation using a
+custom lxml-based serializer that is inline/block/preformatted-aware. It is
+deliberately NOT one of the off-the-shelf options: BeautifulSoup's `prettify`
+reflows inline elements and breaks their rendering; lxml's `pretty_print` /
+`etree.indent` and the `prettierfier` package inject rendering-affecting
+whitespace or don't normalize messy Jinja/Markdown input.
+"""
+
 import importlib
 import re
 import html
