@@ -288,9 +288,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
   <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>
-      Document
-    </title>
+    <title>Document</title>
   </head>
   <body>
   </body>
@@ -415,14 +413,37 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
             """
 <div>
   <ul>
-    <li>
-      One
-    </li>
-    <li>
-      Two
-    </li>
+    <li>One</li>
+    <li>Two</li>
   </ul>
 </div>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_compact_elements(self):
+        text = "<table><tr><td>Cell one</td><td>Cell <a href='/x'>two</a></td></tr></table>"
+        self.assertEqual(
+            """
+<table>
+  <tr>
+    <td>Cell one</td>
+    <td>Cell <a href="/x">two</a></td>
+  </tr>
+</table>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_compact_element_with_block_child_stays_expanded(self):
+        text = "<li><p>Paragraph</p></li>"
+        self.assertEqual(
+            """
+<li>
+  <p>
+    Paragraph
+  </p>
+</li>
 """.strip(),
             jinjabread.prettify_html(text),
         )

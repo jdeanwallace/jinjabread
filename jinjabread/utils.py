@@ -46,6 +46,13 @@ INLINE_TAGS = frozenset(
 # re-indented or re-escaped.
 OPAQUE_TAGS = frozenset({"pre", "textarea", "script", "style"})
 
+# Block elements kept on a single line when their whole content is one inline
+# run, e.g. `<li>One</li>`. Their leading and trailing whitespace is
+# insignificant, so compacting them only tightens the output.
+COMPACT_TAGS = frozenset(
+    {"caption", "dd", "dt", "figcaption", "li", "option", "td", "th", "title"}
+)
+
 VOID_TAGS = lxml.html.defs.empty_tags
 INDENT = "  "
 
@@ -186,7 +193,7 @@ def render(node, depth):
             return (
                 open_tag + close_tag if inline else f"{open_tag}\n{indent}{close_tag}"
             )
-        if inline:
+        if inline or tag in COMPACT_TAGS:
             return f"{open_tag}{run}{close_tag}"
         return f"{open_tag}\n{child_indent}{run}\n{indent}{close_tag}"
 
