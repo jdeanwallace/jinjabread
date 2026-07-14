@@ -55,6 +55,39 @@ INLINE_TAGS = frozenset(
 # survive pretty-printing byte for byte.
 PREFORMATTED_TAGS = frozenset({"pre", "textarea", "script", "style"})
 
+# Boolean attributes render purely by presence: `disabled` and `disabled="disabled"`
+# are equivalent, so the oracle compares only whether they are present, not their
+# value.
+BOOLEAN_ATTRS = frozenset(
+    {
+        "allowfullscreen",
+        "async",
+        "autofocus",
+        "autoplay",
+        "checked",
+        "controls",
+        "default",
+        "defer",
+        "disabled",
+        "formnovalidate",
+        "hidden",
+        "inert",
+        "ismap",
+        "itemscope",
+        "loop",
+        "multiple",
+        "muted",
+        "nomodule",
+        "novalidate",
+        "open",
+        "playsinline",
+        "readonly",
+        "required",
+        "reversed",
+        "selected",
+    }
+)
+
 
 def _localname(name):
     # html5lib etree names are namespaced, e.g. "{http://www.w3.org/1999/xhtml}p".
@@ -114,7 +147,12 @@ def tag_skeleton(html):
     """Return the element tree as nested (tag, sorted-attrs) tuples, ignoring text."""
 
     def represent(element):
-        attrs = tuple(sorted((_localname(k), v) for k, v in element.attrib.items()))
+        attrs = tuple(
+            sorted(
+                (_localname(k), "" if _localname(k) in BOOLEAN_ATTRS else v)
+                for k, v in element.attrib.items()
+            )
+        )
         return (_localname(element.tag), attrs, tuple(represent(c) for c in element))
 
     return represent(_parse(html))

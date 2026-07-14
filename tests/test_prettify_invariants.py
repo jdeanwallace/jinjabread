@@ -32,6 +32,17 @@ CORPUS = [
     # A block ending in an inline element must stay idempotent.
     "<p><em>a</em> <strong>b</strong></p>",
     "<p><em>a</em><strong>b</strong></p>",
+    # Nested inline runs with significant inter-word whitespace.
+    "<p>a <em>b <strong>c</strong> d</em> e</p>",
+    # Entities in text and attributes must round-trip.
+    "<p>Terms &amp; conditions: 1 &lt; 2 &gt; 0.</p>",
+    '<p>See <a href="/s?a=1&amp;b=2" title="A &amp; B">results</a>.</p>',
+    # A void inline element mid-sentence.
+    '<p>Here is <img src="/i.png" alt="a picture"> inline.</p>',
+    # Deeply nested block structure stays indented.
+    "<div><section><ul><li>x</li><li>y</li></ul></section></div>",
+    # Preformatted content with entities is preserved.
+    "<pre>if x &lt; y &amp;&amp; y &gt; z:\n    go()\n</pre>",
 ]
 
 
@@ -46,7 +57,22 @@ class CorpusInvariantTest(unittest.TestCase):
 
 _words = st.text("abcde", min_size=1, max_size=4)
 _ws = st.sampled_from(["", " ", "  ", "\n", "\n  "])
-_inline_tags = st.sampled_from(["em", "strong", "code", "span"])
+_inline_tags = st.sampled_from(
+    [
+        "em",
+        "strong",
+        "code",
+        "span",
+        "b",
+        "i",
+        "mark",
+        "small",
+        "sub",
+        "sup",
+        "u",
+        "abbr",
+    ]
+)
 _flow_tags = st.sampled_from(["div", "section"])
 
 
@@ -61,7 +87,7 @@ def _join(parts):
 # Inline content: words, line breaks, and nested inline elements, joined with
 # arbitrary (possibly significant) whitespace.
 _inline = st.recursive(
-    st.one_of(_words, st.just("<br/>")),
+    st.one_of(_words, st.just("<br/>"), st.just('<img src="x" alt="y"/>')),
     lambda kids: st.one_of(
         st.builds(_wrap, _inline_tags, kids),
         st.builds(_join, st.lists(st.tuples(_ws, kids), min_size=2, max_size=3)),
@@ -90,7 +116,7 @@ _documents = st.builds(lambda body: f"<div>{body}</div>", _block)
 
 class GeneratedInvariantTest(unittest.TestCase):
     @settings(
-        max_examples=200,
+        max_examples=400,
         deadline=None,
         derandomize=True,
         suppress_health_check=[HealthCheck.too_slow],
