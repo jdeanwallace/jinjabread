@@ -34,10 +34,10 @@ This document plans incremental improvements. None change correctness; they impr
 
 ## The work as a reviewable branch stack
 
-The `0.6.4` inline-element bugfix lands first as its own PR and release — it is an urgent user-facing fix, separate from this improvement work. The improvements then follow the repo's stacked-PR convention (see the git style guide): branches are named `<topic>/<N>-<description>`, each based on the previous one, landed bottom-up one PR at a time. Branch `0` holds only the design — this spec plus the implementation plans — so every implementation PR is reviewed against an already-merged spec.
+The `0.6.4` inline-element fix lives on the `prettify-html` base branch that the whole stack builds on; it is not released on its own — the stack lands together. The improvements follow the repo's stacked-PR convention (see the git style guide): branches are named `<topic>/<N>-<description>`, each based on the previous one, landed bottom-up one PR at a time. Branch `0` holds only the design — this spec plus the implementation plans — so every implementation PR is reviewed against an already-merged spec.
 
 ```
-master (with 0.6.4 merged)
+prettify-html (base: the inline-element fix)
  └─ prettifier/0-design               # this spec + the implementation plans; lands first
      └─ prettifier/1-uv-tooling           # dev workflow → uv; the toolchain every later branch runs on
          └─ prettifier/2-test-hardening       # property/metamorphic suite; adds the hypothesis dev dep
