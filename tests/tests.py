@@ -128,7 +128,8 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <div>
   <div>
     Hello, World
-  </div>!
+  </div>
+  !
 </div>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -286,7 +287,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <html lang="en">
   <head>
     <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>
       Document
     </title>
@@ -303,8 +304,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  So as a form of
-  <a href="/x">nesting</a>, we built our own.
+  So as a form of <a href="/x">nesting</a>, we built our own.
 </p>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -315,8 +315,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  This is my
-  <em>emphasised</em> point.
+  This is my <em>emphasised</em> point.
 </p>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -327,8 +326,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  The
-  <strong>end</strong>.
+  The <strong>end</strong>.
 </p>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -339,8 +337,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  Install with
-  <code>pip install jinjabread</code> today.
+  Install with <code>pip install jinjabread</code> today.
 </p>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -351,8 +348,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  Click
-  <a href="/x">here</a>.
+  Click <a href="/x">here</a>.
 </p>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -374,8 +370,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  It ends at
-  <a href="/x">home</a>
+  It ends at <a href="/x">home</a>
 </p>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -397,8 +392,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  See
-  <a href="/x">the <em>full</em> guide</a> now.
+  See <a href="/x">the <em>full</em> guide</a> now.
 </p>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -409,8 +403,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  one
-  <em>two</em> three <strong>four</strong> five
+  one <em>two</em> three <strong>four</strong> five
 </p>
 """.strip(),
             jinjabread.prettify_html(text),
@@ -583,8 +576,7 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         self.assertEqual(
             """
 <p>
-  Hello, here's a
-  <a href="#home">link</a>.
+  Hello, here's a <a href="#home">link</a>.
 </p>
 """.strip(),
             Path("public/home.html").read_text(),

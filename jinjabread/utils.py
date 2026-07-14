@@ -1,8 +1,6 @@
 import importlib
 import re
 import html
-import dataclasses
-import lxml.etree
 import lxml.html
 
 # HTML phrasing (inline) elements. Their contents are never reflowed and the
@@ -52,157 +50,156 @@ VOID_TAGS = lxml.html.defs.empty_tags
 INDENT = "  "
 
 
-@dataclasses.dataclass(kw_only=True, frozen=True)
-class Context:
-    action: str
-    tag: str
-    depth: int
-    is_raw: bool
-    is_void: bool
-    is_inline: bool
-    is_opaque: bool
-    node: lxml.etree._Element
+def is_raw(node):
+    # Comments and processing instructions have a callable tag, not a string.
+    return not (hasattr(node, "tag") and isinstance(node.tag, str))
 
 
-def traverse(node, depth=0):
-    """Iterate through the HTML DOM.
+def is_inlineable(node):
+    """Whether `node` can sit inside a single-line inline run.
 
-    1. Opening tag.
-    2. Text inside element.
-    3. Children nodes.
-    4. Closing tag.
-    5. Trailing text.
+    Text and comments always can. An element can only if it is a phrasing
+    element whose descendants are themselves all inlineable, so nothing forces
+    it onto its own line.
     """
-    is_raw = not (hasattr(node, "tag") and isinstance(node.tag, str))
-    tag = "" if is_raw else node.tag.lower()
-    is_void = tag in VOID_TAGS
-    is_inline = tag in INLINE_TAGS
-    is_opaque = tag in OPAQUE_TAGS
-
-    def context(action):
-        return Context(
-            action=action,
-            tag=tag,
-            depth=depth,
-            is_raw=is_raw,
-            is_void=is_void,
-            is_inline=is_inline,
-            is_opaque=is_opaque,
-            node=node,
-        )
-
-    # Opening tag. Void, raw and opaque nodes are leaves: their inner content is
-    # either absent or emitted verbatim with the opening tag.
-    yield context("open")
-    is_leaf = is_void or is_raw or is_opaque
-
-    # Text inside element.
-    if not is_leaf and node.text:
-        yield context("text")
-
-    # Children nodes.
-    if not is_leaf:
-        for child in node:
-            yield from traverse(child, depth + 1)
-
-    # Closing tag.
-    if not is_leaf:
-        yield context("close")
-
-    # Trailing text.
-    if node.tail:
-        yield context("tail")
-
-
-def leads_with_newline(context, prev_context):
-    """Whether emitting `context` starts on a fresh, indented line."""
-    if context is None:
+    if is_raw(node):
         return True
-    match context.action:
-        case "open":
-            return context.depth > 0 and (
-                not context.is_inline
-                and not context.is_raw
-                or prev_context is not None
-                and not prev_context.is_inline
-                and not prev_context.is_raw
-            )
-        case "text" | "close":
-            return not context.is_inline
-        case _:  # tail
-            return False
+    tag = node.tag.lower()
+    if tag in OPAQUE_TAGS:
+        return False
+    if tag in VOID_TAGS:
+        return tag in INLINE_TAGS
+    if tag not in INLINE_TAGS:
+        return False
+    return all(is_inlineable(child) for child in node)
 
 
-def collapse_whitespace(text, *, keep_leading, keep_trailing):
-    """Collapse whitespace runs, keeping boundary spaces only where significant.
+def render_attributes(node):
+    # Preserve the author's attribute order.
+    return "".join(
+        f' {key}="{html.escape(value, quote=True)}"'
+        for key, value in node.attrib.items()
+    )
 
-    A boundary space is dropped at block edges (where a newline is inserted
-    instead) and kept next to inline content, so words never run together.
+
+def inline_pieces(node):
+    """Yield an element's content as an ordered list of inline pieces."""
+    pieces = []
+    if node.text:
+        pieces.append(("text", node.text))
+    for child in node:
+        pieces.append(("node", child))
+        if child.tail:
+            pieces.append(("text", child.tail))
+    return pieces
+
+
+def render_inline_run(pieces):
+    """Render inline pieces to a single line.
+
+    Runs of whitespace collapse to one space and the run's outer edges are
+    trimmed (it sits between block-edge newlines), but every space between two
+    pieces is preserved, so adjacent words and elements never merge.
     """
-    text = re.sub(r"\s+", " ", text)
-    has_leading = text.startswith(" ")
-    has_trailing = text.endswith(" ")
-    core = text.strip()
-    if not core:
-        keep = (has_leading and keep_leading) or (has_trailing and keep_trailing)
-        return " " if keep else ""
-    if has_leading and keep_leading:
-        core = " " + core
-    if has_trailing and keep_trailing:
-        core = core + " "
-    return core
+    parts = []
+    pending_space = False
+    for kind, value in pieces:
+        if kind == "text":
+            collapsed = re.sub(r"\s+", " ", value)
+            core = collapsed.strip()
+            if not core:
+                pending_space = pending_space or bool(collapsed)
+                continue
+            if (pending_space or collapsed.startswith(" ")) and parts:
+                parts.append(" ")
+            parts.append(html.escape(core, quote=False))
+            pending_space = collapsed.endswith(" ")
+        else:
+            if pending_space and parts:
+                parts.append(" ")
+            parts.append(render_inline_element(value))
+            pending_space = False
+    return "".join(parts)
 
 
-def serialize(root):
-    if root.tag == "html":
-        yield "<!DOCTYPE html>\n"
+def render_inline_element(node):
+    if is_raw(node):
+        return lxml.html.tostring(node, with_tail=False).decode()
+    tag = node.tag.lower()
+    attributes = render_attributes(node)
+    if tag in VOID_TAGS:
+        return f"<{tag}{attributes}/>"
+    return f"<{tag}{attributes}>{render_inline_run(inline_pieces(node))}</{tag}>"
 
-    contexts = list(traverse(root))
-    for index, context in enumerate(contexts):
-        prev_context = contexts[index - 1] if index > 0 else None
-        next_context = contexts[index + 1] if index + 1 < len(contexts) else None
-        padding = context.depth * INDENT
 
-        match context.action:
-            case "open":
-                if leads_with_newline(context, prev_context):
-                    yield f"\n{padding}"
-                if context.is_raw:
-                    yield lxml.html.tostring(context.node, with_tail=False).decode()
-                elif context.is_opaque:
-                    # Emit the whole subtree verbatim to preserve its whitespace.
-                    yield lxml.html.tostring(context.node, with_tail=False).decode()
-                else:
-                    attrs = "".join(
-                        f' {key}="{html.escape(value, quote=True)}"'
-                        for key, value in sorted(context.node.attrib.items())
-                    )
-                    yield f"<{context.tag}{attrs}"
-                    if context.is_void:
-                        yield "/"
-                    yield ">"
-            case "text":
-                text = collapse_whitespace(
-                    context.node.text,
-                    keep_leading=context.is_inline,
-                    keep_trailing=not leads_with_newline(next_context, context),
-                )
-                if text:
-                    if not context.is_inline:
-                        yield f"\n{padding + INDENT}"
-                    yield html.escape(text, quote=False)
-            case "close":
-                if not context.is_inline:
-                    yield f"\n{padding}"
-                yield f"</{context.tag}>"
-            case "tail":
-                tail = collapse_whitespace(
-                    context.node.tail,
-                    keep_leading=context.is_inline,
-                    keep_trailing=not leads_with_newline(next_context, context),
-                )
-                if tail:
-                    yield html.escape(tail, quote=False)
+def partition(node):
+    """Split an element's content into inline runs and block-level children.
+
+    Consecutive inline pieces (text, comments, inline elements) group into one
+    run; every non-inlineable child becomes its own block segment.
+    """
+    segments = []
+    run = []
+
+    def flush():
+        if run:
+            segments.append(("inline", run.copy()))
+            run.clear()
+
+    if node.text:
+        run.append(("text", node.text))
+    for child in node:
+        if is_inlineable(child):
+            run.append(("node", child))
+        else:
+            flush()
+            segments.append(("block", child))
+        if child.tail:
+            run.append(("text", child.tail))
+    flush()
+    return segments
+
+
+def render(node, depth):
+    """Serialize a node's subtree, indenting block structure at `depth`."""
+    if is_raw(node):
+        return lxml.html.tostring(node, with_tail=False).decode()
+    tag = node.tag.lower()
+    if tag in OPAQUE_TAGS:
+        # Emit whitespace-sensitive elements verbatim, exactly as parsed.
+        return lxml.html.tostring(node, with_tail=False).decode()
+
+    attributes = render_attributes(node)
+    if tag in VOID_TAGS:
+        return f"<{tag}{attributes}/>"
+
+    open_tag = f"<{tag}{attributes}>"
+    close_tag = f"</{tag}>"
+    inline = tag in INLINE_TAGS
+    indent = depth * INDENT
+    child_indent = (depth + 1) * INDENT
+
+    segments = partition(node)
+    if not any(kind == "block" for kind, _ in segments):
+        run = render_inline_run(segments[0][1]) if segments else ""
+        if not run:
+            return (
+                open_tag + close_tag if inline else f"{open_tag}\n{indent}{close_tag}"
+            )
+        if inline:
+            return f"{open_tag}{run}{close_tag}"
+        return f"{open_tag}\n{child_indent}{run}\n{indent}{close_tag}"
+
+    parts = [open_tag]
+    for kind, value in segments:
+        if kind == "block":
+            parts.append(f"\n{child_indent}{render(value, depth + 1)}")
+        else:
+            run = render_inline_run(value)
+            if run:
+                parts.append(f"\n{child_indent}{run}")
+    parts.append(close_tag if inline else f"\n{indent}{close_tag}")
+    return "".join(parts)
 
 
 def prettify_html(text):
@@ -210,7 +207,8 @@ def prettify_html(text):
         return ""
 
     root = lxml.html.fromstring(text)
-    return "".join(serialize(root))
+    doctype = "<!DOCTYPE html>\n" if root.tag == "html" else ""
+    return doctype + render(root, 0)
 
 
 def load_page_class(dot_path):
