@@ -320,23 +320,22 @@ Resulting in:
 
 ### Setup
 
+Install uv (https://docs.astral.sh/uv/getting-started/installation/), then:
+
 ```bash
-python -m venv venv && \
-  . venv/bin/activate && \
-  pip install pip pip-tools --upgrade && \
-  pip-sync requirements.txt
+uv sync
 ```
 
 ### Test
 
 ```bash
-python -m unittest
+uv run python -m unittest
 ```
 
 ### Build
 
 ```bash
-python -m build
+uv build
 ```
 
 ### Release
@@ -344,5 +343,5 @@ python -m build
 ```bash
 export TWINE_USERNAME='__token__'
 export TWINE_PASSWORD='secret-token'
-python -m twine upload dist/*
+uvx twine upload dist/*
 ```
