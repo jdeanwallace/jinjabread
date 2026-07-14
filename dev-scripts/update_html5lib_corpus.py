@@ -7,8 +7,8 @@ changed. Run it by hand, then review the diff and run the suite before
 committing — a bump is a deliberate dependency roll, not something the everyday
 test run does over the network.
 
-    python3 scripts/update_html5lib_corpus.py             # latest master
-    python3 scripts/update_html5lib_corpus.py --ref v1.1  # a tag or commit SHA
+    python3 dev-scripts/update_html5lib_corpus.py             # latest master
+    python3 dev-scripts/update_html5lib_corpus.py --ref v1.1  # a tag or commit SHA
 """
 
 import argparse
