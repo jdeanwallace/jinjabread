@@ -11,24 +11,20 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Create virtual environment
-          command: |
-            python -m venv venv
-            . venv/bin/activate
-            pip install pip pip-tools --upgrade
-            pip-sync requirements.txt
+          name: Install uv
+          command: pip install uv
+      - run:
+          name: Install dependencies
+          command: uv sync --locked
       - run:
           name: Check style
-          command: |
-            . venv/bin/activate
-            black --check .
+          command: uv run black --check .
       - run:
           name: Run tests
           command: |
-            . venv/bin/activate
-            coverage run --source jinjabread -m unittest discover .
-            coverage report
-            coverage html
+            uv run coverage run --source jinjabread -m unittest discover .
+            uv run coverage report
+            uv run coverage html
       - store_artifacts:
           path: htmlcov
   publish-python-package:
@@ -36,22 +32,14 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Create virtual environment
-          command: |
-            python -m venv venv
-            . venv/bin/activate
-            pip install pip pip-tools --upgrade
-            pip-sync requirements.txt
+          name: Install uv
+          command: pip install uv
       - run:
           name: Create build
-          command: |
-            . venv/bin/activate
-            python -m build
+          command: uv build
       - run:
           name: Upload build
-          command: |
-            . venv/bin/activate
-            python -m twine upload dist/*
+          command: uvx twine upload dist/*
 workflows:
   main:
     jobs:
