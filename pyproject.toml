@@ -22,6 +22,13 @@
   Repository = "https://github.com/jdeanwallace/jinjabread.git"
   Issues = "https://github.com/jdeanwallace/jinjabread/issues"
 
+[dependency-groups]
+  dev = [
+    "black==25.1.0",
+    "coverage",
+    "twine",
+  ]
+
 [tool.setuptools]
   packages = ["jinjabread"]
 

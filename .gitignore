@@ -1,5 +1,5 @@
 __pycache__/
-/venv/
+.venv/
 *.pyc
 .DS_Store
 /dist/
