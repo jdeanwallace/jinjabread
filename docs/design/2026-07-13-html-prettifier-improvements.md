@@ -1,7 +1,7 @@
 # HTML prettifier improvements + tooling
 
 **Date:** 2026-07-13
-**Status:** Approved design, pending implementation plan
+**Status:** Implemented across branches `prettifier/1`–`prettifier/5`; held for the 0.6.4 release
 **Base:** the `0.6.4` inline-element bugfix (custom lxml serializer in `jinjabread/utils.py`)
 
 ## Background
