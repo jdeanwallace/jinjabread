@@ -34,7 +34,7 @@ def _well_formed(html):
 def load_corpus():
     """Return (kept_inputs, skipped_count) from the vendored html5lib tests."""
     inputs = []
-    for path in sorted(_CORPUS_DIR.glob("*.test")):
+    for path in sorted((_CORPUS_DIR / "data").glob("*.test")):
         for test in json.loads(path.read_text()).get("tests", []):
             for expected in test.get("expected", []):
                 if "<" in expected and expected not in inputs:
