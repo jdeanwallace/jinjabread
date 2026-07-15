@@ -30,6 +30,13 @@
     "hypothesis",
     "twine",
   ]
+  # Optional comparison pretty-printers for benchmarks/ (not shipped, not needed
+  # for tests). pytidylib also needs the system libtidy library at runtime.
+  bench = [
+    "beautifulsoup4",
+    "prettierfier",
+    "pytidylib",
+  ]
 
 [tool.setuptools]
   packages = ["jinjabread"]

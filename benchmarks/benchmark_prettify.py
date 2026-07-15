@@ -15,8 +15,11 @@ out (Prettier is timed separately if it is on PATH, clearly labelled).
 
 Install the optional comparison libraries to include them:
 
-    uv pip install beautifulsoup4 prettierfier
+    uv sync --group bench
     python benchmarks/benchmark_prettify.py
+
+HTML Tidy additionally needs the system libtidy library; Prettier needs Node on
+PATH. Both are skipped with a hint when absent.
 """
 
 import shutil
@@ -63,14 +66,24 @@ def in_process_printers():
             h, "html.parser"
         ).prettify()
     except ImportError:
-        print("(bs4 not installed — `uv pip install beautifulsoup4`)")
+        print("(bs4 skipped — `uv sync --group bench`)")
 
     try:
         import prettierfier
 
         printers["prettierfier"] = prettierfier.prettify_html
     except ImportError:
-        print("(prettierfier not installed — `uv pip install prettierfier`)")
+        print("(prettierfier skipped — `uv sync --group bench`)")
+
+    try:
+        from tidylib import tidy_document
+
+        tidy_document("<p>x</p>")  # probe: raises OSError if libtidy is absent
+        printers["html tidy"] = lambda h: tidy_document(h)[0]
+    except ImportError:
+        print("(html tidy skipped — `uv sync --group bench`)")
+    except OSError:
+        print("(html tidy skipped — install the system libtidy library)")
 
     return printers
 
@@ -81,17 +94,22 @@ def per_call_seconds(func, html):
     return min(timer.repeat(repeat=5, number=number)) / number
 
 
+def _row(name, ms, relative, note=""):
+    return f"  {name:<18}{ms:>10}{relative:>14}   {note}".rstrip()
+
+
 def main():
     printers = in_process_printers()
     prettier = shutil.which("prettier")
 
     for size, html in INPUTS.items():
         print(f"\nInput: {size} ({len(html):,} bytes)")
+        print(_row("pretty-printer", "ms/call", "vs jinjabread"))
         baseline = None
         for name, func in printers.items():
             seconds = per_call_seconds(func, html)
             baseline = baseline or seconds
-            print(f"  {name:<18}{seconds * 1e3:9.3f} ms{seconds / baseline:7.1f}x")
+            print(_row(name, f"{seconds * 1e3:.3f}", f"{seconds / baseline:.1f}x"))
         if prettier:
             seconds = per_call_seconds(
                 lambda h: subprocess.run(
@@ -104,11 +122,16 @@ def main():
                 html,
             )
             print(
-                f"  {'prettier (node)':<18}{seconds * 1e3:9.3f} ms{seconds / baseline:7.1f}x"
-                "   (out-of-process, includes startup)"
+                _row(
+                    "prettier (node)",
+                    f"{seconds * 1e3:.3f}",
+                    f"{seconds / baseline:.1f}x",
+                    "out-of-process, includes startup",
+                )
             )
 
-    print("\nOutputs differ between tools; read these as relative cost, not a ranking.")
+    print("\nms/call is absolute; the last column is relative to jinjabread.")
+    print("Outputs differ between tools — read this as relative cost, not a ranking.")
 
 
 if __name__ == "__main__":
