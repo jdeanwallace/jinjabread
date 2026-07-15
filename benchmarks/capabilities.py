@@ -5,10 +5,11 @@ A manual, run-when-curious companion to benchmark_prettify.py. It runs each
 available pretty-printer over the test corpus through the render-invariance and
 idempotence oracle from tests/invariants.py, and probes whether it normalizes
 messy input — the properties jinjabread needs. See README.md for the per-tool
-tradeoffs this produces.
+tradeoffs this produces. The comparators are not project dependencies; install
+whichever ones you want (see README.md for pinned versions):
 
-    uv sync --group bench                  # bs4, prettierfier, HTML Tidy
-    npm install -g prettier js-beautify    # the Node pretty-printers
+    pip install beautifulsoup4 prettierfier pytidylib   # in-process Python
+    npm install -g prettier js-beautify                 # the Node pretty-printers
     python benchmarks/capabilities.py
 """
 

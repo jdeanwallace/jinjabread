@@ -10,19 +10,31 @@ people commonly reach for, across a few input sizes, reporting each one's absolu
 cost (ms/call) and its cost relative to `jinjabread`.
 
 ```bash
-uv sync --group bench          # installs the optional comparison libraries
 python benchmarks/benchmark_prettify.py
 ```
 
-The `bench` dependency group provides the in-process Python pretty-printers:
-`bs4.prettify`, `prettierfier`, and HTML Tidy (via `pytidylib`). Two of the popular
-options need something extra and are skipped (with a hint) when absent:
+The comparison pretty-printers are **not** project dependencies — they're only for
+these curiosity benchmarks, so install whichever ones you want included and the
+benchmark discovers them at runtime (anything missing is skipped with a hint). The
+versions these numbers were measured against:
 
-- **HTML Tidy** needs the system `libtidy` library (e.g. `apt install libtidy58`
-  or `brew install tidy-html5`); it runs in-process via `pytidylib`.
-- **Prettier** and **js-beautify** need Node on your PATH (`npm install -g prettier
-  js-beautify`). They are timed inside a single Node process via `node_bench.js`, so
-  their figures exclude Node startup and are comparable to the in-process ones.
+- **BeautifulSoup**, **prettierfier**, **HTML Tidy** — in-process Python, via pip:
+
+  ```bash
+  pip install beautifulsoup4==4.15.0 prettierfier==1.0.3 pytidylib==0.3.2
+  ```
+
+- **HTML Tidy** also needs the system `libtidy` shared library (HTML Tidy 5.8.0):
+  `brew install tidy-html5` (macOS) or your distro's tidy runtime package
+  (Debian/Ubuntu: `apt install libtidy5deb1`). `pytidylib` loads it at runtime.
+- **Prettier** and **js-beautify** — Node on your PATH:
+
+  ```bash
+  npm install -g prettier@3.9.5 js-beautify@2.0.3
+  ```
+
+  They are timed inside a single Node process via `node_bench.js`, so their figures
+  exclude Node startup and are comparable to the in-process ones.
 
 The tools don't produce identical output, so treat the numbers as relative cost,
 not a ranking.
@@ -38,7 +50,8 @@ three correctness properties, and no off-the-shelf tool provides all three:
 
 The figures below come from running each tool through the test suite's
 render-invariance and idempotence oracle (`tests/invariants.py`) over the corpus of
-137 cases (reproduce with `python benchmarks/capabilities.py`). jinjabread is the
+137 cases (install the comparison libraries above, then reproduce with `python
+benchmarks/capabilities.py`). jinjabread is the
 reference row — it meets all three by construction, since that's what its tests
 enforce — and the rest is where the off-the-shelf options fall short:
 

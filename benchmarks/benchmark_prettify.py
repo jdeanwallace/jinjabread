@@ -14,14 +14,14 @@ The Python tools are timed in this process; the Node tools (Prettier, js-beautif
 are timed inside a single Node process via node_bench.js. Every figure therefore
 excludes one-off interpreter/process startup, so they are comparable.
 
-Enable the optional comparators:
+The comparators are not project dependencies; install whichever ones you want
+(anything missing is skipped with a hint). See README.md for pinned versions:
 
-    uv sync --group bench                  # bs4, prettierfier, HTML Tidy
-    npm install -g prettier js-beautify    # the Node pretty-printers
+    pip install beautifulsoup4 prettierfier pytidylib   # in-process Python
+    npm install -g prettier js-beautify                 # the Node pretty-printers
     python benchmarks/benchmark_prettify.py
 
-HTML Tidy also needs the system libtidy library. Anything missing is skipped with a
-hint.
+HTML Tidy also needs the system libtidy library.
 """
 
 import json
@@ -71,14 +71,14 @@ def in_process_printers():
             h, "html.parser"
         ).prettify()
     except ImportError:
-        print("(bs4 skipped — `uv sync --group bench`)")
+        print("(bs4 skipped — pip install beautifulsoup4)")
 
     try:
         import prettierfier
 
         printers["prettierfier"] = prettierfier.prettify_html
     except ImportError:
-        print("(prettierfier skipped — `uv sync --group bench`)")
+        print("(prettierfier skipped — pip install prettierfier)")
 
     try:
         from tidylib import tidy_document
@@ -86,7 +86,7 @@ def in_process_printers():
         tidy_document("<p>x</p>")  # probe: raises OSError if libtidy is absent
         printers["html tidy"] = lambda h: tidy_document(h)[0]
     except ImportError:
-        print("(html tidy skipped — `uv sync --group bench`)")
+        print("(html tidy skipped — pip install pytidylib)")
     except OSError:
         print("(html tidy skipped — install the system libtidy library)")
 
