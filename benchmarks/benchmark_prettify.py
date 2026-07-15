@@ -3,28 +3,33 @@
 
 A manual, run-when-curious benchmark — not part of CI (perf is machine-dependent,
 so a threshold assertion would be flaky). Each pretty-printer is timed end-to-end
-(HTML string in -> pretty string out, i.e. parse + serialize, which is what a build
-actually pays) across a few input sizes.
+(HTML string in -> pretty string out, i.e. parse + serialize) across a few input
+sizes, taking the best of several repeats after a warm-up.
 
 This is context, not a verdict: the tools do not produce the same output. lxml's
 `pretty_print` doesn't normalize whitespace (it does less), `bs4.prettify` breaks
-inline elements, and `prettierfier` post-processes already-clean input. The popular
-non-Python tools (Prettier, js-beautify, HTML Tidy) run out of process (Node/C), so
-a per-call in-process comparison would only measure process startup; they are left
-out (Prettier is timed separately if it is on PATH, clearly labelled).
+inline elements, and `prettierfier` post-processes already-clean input.
 
-Install the optional comparison libraries to include them:
+The Python tools are timed in this process; the Node tools (Prettier, js-beautify)
+are timed inside a single Node process via node_bench.js. Every figure therefore
+excludes one-off interpreter/process startup, so they are comparable.
 
-    uv sync --group bench
+Enable the optional comparators:
+
+    uv sync --group bench                  # bs4, prettierfier, HTML Tidy
+    npm install -g prettier js-beautify    # the Node pretty-printers
     python benchmarks/benchmark_prettify.py
 
-HTML Tidy additionally needs the system libtidy library; Prettier needs Node on
-PATH. Both are skipped with a hint when absent.
+HTML Tidy also needs the system libtidy library. Anything missing is skipped with a
+hint.
 """
 
+import json
+import os
 import shutil
 import subprocess
 import timeit
+from pathlib import Path
 
 from jinjabread.utils import prettify_html
 
@@ -98,24 +103,42 @@ def _row(name, ms, relative, note=""):
     return f"  {name:<18}{ms:>10}{relative:>14}   {note}".rstrip()
 
 
-def subprocess_tools():
-    # Out-of-process pretty-printers (Node): included when on PATH. Their per-call
-    # time includes process startup, so it is not comparable to the in-process
-    # figures — the rows are labelled accordingly.
-    tools = []
-    for name, argv in [
-        ("prettier (node)", ["prettier", "--parser", "html"]),
-        ("js-beautify (node)", ["html-beautify", "-"]),
-    ]:
-        binary = shutil.which(argv[0])
-        if binary:
-            tools.append((name, [binary, *argv[1:]]))
-    return tools
+def node_results():
+    """Steady-state per-call seconds for the Node pretty-printers: {tool: {size: s}}.
+
+    Timed inside one Node process (node_bench.js) so the figures exclude Node
+    startup and are comparable to the in-process Python ones. Returns {} with a hint
+    when Node or the packages are unavailable.
+    """
+    node = shutil.which("node")
+    npm = shutil.which("npm")
+    harness = Path(__file__).with_name("node_bench.js")
+    if not (node and npm and harness.exists()):
+        print(
+            "(prettier / js-beautify skipped — Node + `npm install -g prettier js-beautify`)"
+        )
+        return {}
+    node_path = subprocess.run(
+        [npm, "root", "-g"], capture_output=True, text=True
+    ).stdout.strip()
+    result = subprocess.run(
+        [node, str(harness)],
+        input=json.dumps(INPUTS),
+        capture_output=True,
+        text=True,
+        env={**os.environ, "NODE_PATH": node_path},
+    )
+    if result.returncode != 0:
+        print(
+            "(prettier / js-beautify skipped — `npm install -g prettier js-beautify`)"
+        )
+        return {}
+    return json.loads(result.stdout)
 
 
 def main():
     printers = in_process_printers()
-    out_of_process = subprocess_tools()
+    node = node_results()
 
     for size, html in INPUTS.items():
         print(f"\nInput: {size} ({len(html):,} bytes)")
@@ -125,21 +148,16 @@ def main():
             seconds = per_call_seconds(func, html)
             baseline = baseline or seconds
             print(_row(name, f"{seconds * 1e3:.3f}", f"{seconds / baseline:.1f}x"))
-        for name, argv in out_of_process:
-            seconds = per_call_seconds(
-                lambda h, a=argv: subprocess.run(
-                    a, input=h, capture_output=True, text=True, check=True
-                ).stdout,
-                html,
-            )
-            print(
-                _row(
-                    name,
-                    f"{seconds * 1e3:.3f}",
-                    f"{seconds / baseline:.1f}x",
-                    "out-of-process, includes startup",
+        for tool, per_size in node.items():
+            seconds = per_size.get(size)
+            if seconds is not None:
+                print(
+                    _row(
+                        f"{tool} (node)",
+                        f"{seconds * 1e3:.3f}",
+                        f"{seconds / baseline:.1f}x",
+                    )
                 )
-            )
 
     print("\nms/call is absolute; the last column is relative to jinjabread.")
     print("Outputs differ between tools — read this as relative cost, not a ranking.")
