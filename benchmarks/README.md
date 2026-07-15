@@ -36,11 +36,11 @@ three correctness properties, and no off-the-shelf tool provides all three:
 2. preserve rendering — never inject whitespace inside or around inline elements;
 3. be idempotent.
 
-jinjabread implements all three by construction — that's what its test suite
-enforces — so it isn't graded here; the point is where the *existing* tools fall
-short. The figures below come from running each one through that same
+The figures below come from running each tool through the test suite's
 render-invariance and idempotence oracle (`tests/invariants.py`) over the corpus of
-137 cases:
+137 cases (reproduce with `python benchmarks/capabilities.py`). jinjabread is the
+reference row — it meets all three by construction, since that's what its tests
+enforce — and the rest is where the off-the-shelf options fall short:
 
 - **lxml `pretty_print`** — fast and already a dependency, but doesn't normalize
   messy input and is badly non-idempotent (16/137 — re-prettifying keeps changing

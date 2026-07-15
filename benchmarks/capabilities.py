@@ -39,10 +39,9 @@ def _node_formatter(argv):
 
 
 def formatters():
-    # Grade the alternatives against the bar; jinjabread defines that bar (its test
-    # suite enforces it), so it is not a row here.
+    # jinjabread is the first row, as the reference — it meets the bar by
+    # construction. The rows that matter are where the alternatives fall short.
     tools = dict(in_process_printers())
-    tools.pop("jinjabread", None)
     for name, argv in [
         ("prettier", ["prettier", "--parser", "html"]),
         ("js-beautify", ["html-beautify", "-"]),
