@@ -30,14 +30,13 @@ not a ranking.
 ## Tradeoffs vs jinjabread's needs
 
 Speed is only half the story — the tools differ in *what they do*. jinjabread needs
-four things at once, and no off-the-shelf tool provides all of them:
+three correctness properties, and no off-the-shelf tool provides all three:
 
 1. normalize messy Jinja/Markdown output into clean, consistent indentation;
 2. preserve rendering — never inject whitespace inside or around inline elements;
-3. be idempotent;
-4. run pure-Python in-process — no Node or C runtime for a Python site generator.
+3. be idempotent.
 
-The correctness figures below come from running each tool through the test suite's
+The figures below come from running each tool through the test suite's
 render-invariance and idempotence oracle (`tests/invariants.py`) over the corpus of
 137 cases:
 
@@ -54,14 +53,17 @@ render-invariance and idempotence oracle (`tests/invariants.py`) over the corpus
 - **HTML Tidy** (`pytidylib`) — fast and normalizes, but rewrites a fragment into a
   whole document (adds doctype/html/head/body), which changes the structure
   (render-invariant 1/137) — it's a document cleaner, not an in-place
-  pretty-printer — and needs the system libtidy C library. Misses 2 and 4.
+  pretty-printer. Misses 2.
 - **Prettier** (Node) — the gold-standard formatter, normalizes and is
-  whitespace-aware, but needs a Node toolchain (misses 4 for a Python generator),
-  errors on 21/137 of our fragment inputs, and isn't fully render-invariant or
-  idempotent here (112/137, 116/137).
+  whitespace-aware, but errors on 21/137 of our fragment inputs and isn't fully
+  render-invariant or idempotent here (112/137, 116/137). Misses 2, 3.
 - **js-beautify** (Node) — render-invariant (129/137) and idempotent, but doesn't
-  normalize messy input and needs Node. Misses 1 and 4.
+  normalize messy input. Misses 1.
 
-**jinjabread** is 137/137 render-invariant, 137/137 idempotent, normalizes, and is
-pure-Python in-process. It's custom because every existing tool misses at least one
-of the four needs.
+Every tool fails at least one of the three; jinjabread passes all three (137/137,
+137/137, normalizes). That correctness gap alone is why it's custom.
+
+Packaging is a secondary point, not the deciding one: Prettier and js-beautify need
+a Node runtime and HTML Tidy needs the system libtidy library, which is friction for
+`pip install jinjabread`. (jinjabread already depends on lxml — a C library shipped
+as wheels — so the bar is "a normal pip dependency", not "pure Python".)
