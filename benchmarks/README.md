@@ -36,7 +36,9 @@ three correctness properties, and no off-the-shelf tool provides all three:
 2. preserve rendering — never inject whitespace inside or around inline elements;
 3. be idempotent.
 
-The figures below come from running each tool through the test suite's
+jinjabread implements all three by construction — that's what its test suite
+enforces — so it isn't graded here; the point is where the *existing* tools fall
+short. The figures below come from running each one through that same
 render-invariance and idempotence oracle (`tests/invariants.py`) over the corpus of
 137 cases:
 
@@ -60,8 +62,8 @@ render-invariance and idempotence oracle (`tests/invariants.py`) over the corpus
 - **js-beautify** (Node) — render-invariant (129/137) and idempotent, but doesn't
   normalize messy input. Misses 1.
 
-Every tool fails at least one of the three; jinjabread passes all three (137/137,
-137/137, normalizes). That correctness gap alone is why it's custom.
+Every one of these fails at least one of the three requirements — which is why
+jinjabread has its own serializer instead of wrapping one of them.
 
 Packaging is a secondary point, not the deciding one: Prettier and js-beautify need
 a Node runtime and HTML Tidy needs the system libtidy library, which is friction for

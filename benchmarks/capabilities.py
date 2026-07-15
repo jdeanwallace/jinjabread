@@ -39,7 +39,10 @@ def _node_formatter(argv):
 
 
 def formatters():
+    # Grade the alternatives against the bar; jinjabread defines that bar (its test
+    # suite enforces it), so it is not a row here.
     tools = dict(in_process_printers())
+    tools.pop("jinjabread", None)
     for name, argv in [
         ("prettier", ["prettier", "--parser", "html"]),
         ("js-beautify", ["html-beautify", "-"]),
@@ -79,8 +82,8 @@ def main():
             f"  {name:<18}{f'{render}/{total}':>12}"
             f"{f'{idempotent}/{total}':>12}{errors:>8}{shown:>12}"
         )
-    print("\njinjabread needs render-invariance, idempotence, and normalization of")
-    print("messy template output. See README.md for the per-tool tradeoffs.")
+    print("\nThe bar is render-invariance, idempotence, and normalizing messy")
+    print("template output. See README.md for the per-tool tradeoffs.")
 
 
 if __name__ == "__main__":
