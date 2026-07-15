@@ -98,9 +98,24 @@ def _row(name, ms, relative, note=""):
     return f"  {name:<18}{ms:>10}{relative:>14}   {note}".rstrip()
 
 
+def subprocess_tools():
+    # Out-of-process pretty-printers (Node): included when on PATH. Their per-call
+    # time includes process startup, so it is not comparable to the in-process
+    # figures — the rows are labelled accordingly.
+    tools = []
+    for name, argv in [
+        ("prettier (node)", ["prettier", "--parser", "html"]),
+        ("js-beautify (node)", ["html-beautify", "-"]),
+    ]:
+        binary = shutil.which(argv[0])
+        if binary:
+            tools.append((name, [binary, *argv[1:]]))
+    return tools
+
+
 def main():
     printers = in_process_printers()
-    prettier = shutil.which("prettier")
+    out_of_process = subprocess_tools()
 
     for size, html in INPUTS.items():
         print(f"\nInput: {size} ({len(html):,} bytes)")
@@ -110,20 +125,16 @@ def main():
             seconds = per_call_seconds(func, html)
             baseline = baseline or seconds
             print(_row(name, f"{seconds * 1e3:.3f}", f"{seconds / baseline:.1f}x"))
-        if prettier:
+        for name, argv in out_of_process:
             seconds = per_call_seconds(
-                lambda h: subprocess.run(
-                    [prettier, "--parser", "html"],
-                    input=h,
-                    capture_output=True,
-                    text=True,
-                    check=True,
+                lambda h, a=argv: subprocess.run(
+                    a, input=h, capture_output=True, text=True, check=True
                 ).stdout,
                 html,
             )
             print(
                 _row(
-                    "prettier (node)",
+                    name,
                     f"{seconds * 1e3:.3f}",
                     f"{seconds / baseline:.1f}x",
                     "out-of-process, includes startup",
