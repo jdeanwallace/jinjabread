@@ -4,7 +4,7 @@ _definitions:
 executors:
   python:
     docker:
-      - image: cimg/python:3.12.1
+      - image: cimg/python:3.13.5
 jobs:
   test-python:
     executor: python
