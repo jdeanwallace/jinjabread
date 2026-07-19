@@ -15,8 +15,8 @@ commands:
       - run:
           name: Install uv
           command: |
-            curl -LsSf https://astral.sh/uv/0.11.28/install.sh | sh
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+            curl --fail --location --silent --show-error https://astral.sh/uv/0.11.28/install.sh | sh
+            echo 'export PATH="${HOME}/.local/bin:${PATH}"' >> "${BASH_ENV}"
 
 jobs:
   test-python:
