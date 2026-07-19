@@ -336,5 +336,5 @@ uv build
 ```bash
 export TWINE_USERNAME='__token__'
 export TWINE_PASSWORD='secret-token'
-uvx twine upload dist/*
+uv run twine upload dist/*
 ```
