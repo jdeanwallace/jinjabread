@@ -50,29 +50,29 @@ three correctness properties, and no off-the-shelf tool provides all three:
 
 The figures below come from running each tool through the test suite's
 render-invariance and idempotence oracle (`tests/invariants.py`) over the corpus of
-137 cases (install the comparison libraries above, then reproduce with `python
+141 cases (install the comparison libraries above, then reproduce with `python
 benchmarks/capabilities.py`). jinjabread is the
 reference row — it meets all three by construction, since that's what its tests
 enforce — and the rest is where the off-the-shelf options fall short:
 
 - **lxml `pretty_print`** — fast and already a dependency, but doesn't normalize
-  messy input and is badly non-idempotent (16/137 — re-prettifying keeps changing
-  it), and injects whitespace around inline elements (render-invariant 125/137).
+  messy input and is badly non-idempotent (16/141 — re-prettifying keeps changing
+  it), and injects whitespace around inline elements (render-invariant 125/141).
   Misses 1–3.
 - **bs4 `.prettify()`** — normalizes and is idempotent, but puts every tag on its
-  own line, breaking inline rendering (render-invariant 123/137 — the original
+  own line, breaking inline rendering (render-invariant 125/141 — the original
   bug). Misses 2.
-- **prettierfier** — nearly render-invariant (134/137) and idempotent, but it is a
+- **prettierfier** — nearly render-invariant (138/141) and idempotent, but it is a
   post-processor: it does *not* normalize messy input (it leaves the blank lines and
   ragged indentation), and it's unmaintained (Py3.7, raw-string parsing). Misses 1.
 - **HTML Tidy** (`pytidylib`) — fast and normalizes, but rewrites a fragment into a
   whole document (adds doctype/html/head/body), which changes the structure
-  (render-invariant 1/137) — it's a document cleaner, not an in-place
+  (render-invariant 1/141) — it's a document cleaner, not an in-place
   pretty-printer. Misses 2.
 - **Prettier** (Node) — the gold-standard formatter, normalizes and is
-  whitespace-aware, but errors on 21/137 of our fragment inputs and isn't fully
-  render-invariant or idempotent here (112/137, 116/137). Misses 2, 3.
-- **js-beautify** (Node) — render-invariant (129/137) and idempotent, but doesn't
+  whitespace-aware, but errors on 21/141 of our fragment inputs and isn't fully
+  render-invariant or idempotent here (116/141, 120/141). Misses 2, 3.
+- **js-beautify** (Node) — render-invariant (133/141) and idempotent, but doesn't
   normalize messy input. Misses 1.
 
 Every one of these fails at least one of the three requirements — which is why
