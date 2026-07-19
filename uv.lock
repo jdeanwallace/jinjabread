@@ -345,7 +345,7 @@ requires-dist = [
 dev = [
     { name = "black", specifier = "==25.1.0" },
     { name = "coverage" },
-    { name = "twine" },
+    { name = "twine", specifier = "==6.2.0" },
 ]
 
 [[package]]

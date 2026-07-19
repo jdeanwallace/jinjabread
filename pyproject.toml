@@ -26,7 +26,7 @@
   dev = [
     "black==25.1.0",
     "coverage",
-    "twine",
+    "twine==6.2.0",
   ]
 
 [tool.setuptools]

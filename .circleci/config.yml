@@ -12,7 +12,9 @@ jobs:
       - checkout
       - run:
           name: Install uv
-          command: pip install uv
+          command: |
+            curl -LsSf https://astral.sh/uv/0.11.28/install.sh | sh
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
       - run:
           name: Install dependencies
           command: uv sync --locked
@@ -33,13 +35,15 @@ jobs:
       - checkout
       - run:
           name: Install uv
-          command: pip install uv
+          command: |
+            curl -LsSf https://astral.sh/uv/0.11.28/install.sh | sh
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
       - run:
           name: Create build
           command: uv build
       - run:
           name: Upload build
-          command: uvx twine upload dist/*
+          command: uv run twine upload dist/*
 workflows:
   main:
     jobs:
