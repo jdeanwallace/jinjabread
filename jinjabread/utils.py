@@ -224,8 +224,25 @@ def prettify_html(text):
         return ""
 
     root = lxml.html.fromstring(text)
-    doctype = "<!DOCTYPE html>\n" if root.tag == "html" else ""
-    return doctype + render(root, 0)
+    if root.tag == "html":
+        # A full document, or a document-level fragment the parser promoted (e.g. a
+        # lone <head> or <script>): emit it with a doctype, as lxml resolved it.
+        return "<!DOCTYPE html>\n" + render(root, 0)
+
+    # A body-level fragment. lxml.html.fromstring wraps multiple roots or leading
+    # text in a synthetic <div>/<span>; re-parse and render the top-level pieces so
+    # that injected wrapper never reaches the output. A single-rooted fragment
+    # renders identically either way.
+    wrapper = lxml.html.fragment_fromstring(text, create_parent="div")
+    rendered = []
+    for kind, value in partition(wrapper):
+        if kind == "block":
+            rendered.append(render(value, 0))
+        else:
+            run = render_inline_run(value)
+            if run:
+                rendered.append(run)
+    return "\n".join(rendered)
 
 
 def load_page_class(dot_path):
