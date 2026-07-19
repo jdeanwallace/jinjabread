@@ -43,6 +43,12 @@ CORPUS = [
     "<div><section><ul><li>x</li><li>y</li></ul></section></div>",
     # Preformatted content with entities is preserved.
     "<pre>if x &lt; y &amp;&amp; y &gt; z:\n    go()\n</pre>",
+    # Fragments with several top-level roots, or leading text, must render without
+    # gaining a wrapper element (lxml.html.fromstring would inject a <div>/<span>).
+    "<p>first</p><p>second</p>",
+    '<h1>Title</h1><p>Body with <a href="/x">a link</a>.</p>',
+    "Leading text, then <em>inline</em> and <strong>more</strong>.",
+    "<ul><li>a</li></ul><ul><li>b</li></ul>",
 ]
 
 
@@ -113,6 +119,10 @@ _block = st.recursive(
 
 _documents = st.builds(lambda body: f"<div>{body}</div>", _block)
 
+# Bare fragments: several top-level roots (or leading text) with no single wrapping
+# element, so the serializer is exercised on the inputs that used to gain a wrapper.
+_fragments = st.builds(_join, st.lists(st.tuples(_ws, _block), min_size=2, max_size=3))
+
 
 class GeneratedInvariantTest(unittest.TestCase):
     @settings(
@@ -121,6 +131,6 @@ class GeneratedInvariantTest(unittest.TestCase):
         derandomize=True,
         suppress_health_check=[HealthCheck.too_slow],
     )
-    @given(html=_documents)
+    @given(html=st.one_of(_documents, _fragments))
     def test_generated_inputs_are_invariant(self, html):
         invariants.assert_prettify_invariant(html)
