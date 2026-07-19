@@ -28,7 +28,7 @@
     "coverage",
     "html5lib",
     "hypothesis",
-    "twine",
+    "twine==6.2.0",
   ]
 
 [tool.setuptools]

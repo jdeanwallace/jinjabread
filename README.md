@@ -210,7 +210,7 @@ It was a cold stormy night...
 <h1>{{ title }}</h1>
 <h2>{{ description }}</h2>
 <h3>Written by {{ author }}</h3>
-<p>{{ content }}</p>
+{{ content }}
 ```
 
 Results in the following output:
@@ -227,9 +227,7 @@ Results in the following output:
   Written by John Smith
 </h3>
 <p>
-  <p>
-    It was a cold stormy night...
-  </p>
+  It was a cold stormy night...
 </p>
 ```
 
@@ -308,12 +306,7 @@ Resulting in:
 
 ```html
 <!-- mysite/public/posts/index.html -->
-<a href="/posts/post1">
-  Post1
-</a>
-<a href="/posts/post2">
-  Post2
-</a>
+<a href="/posts/post1">Post1</a> <a href="/posts/post2">Post2</a>
 ```
 
 ## Contributing
