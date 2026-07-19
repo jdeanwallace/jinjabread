@@ -4,7 +4,7 @@
 A manual, run-when-curious companion to benchmark_prettify.py. It runs each
 available pretty-printer over the test corpus through the render-invariance and
 idempotence oracle from tests/invariants.py, and probes whether it normalizes
-messy input — the properties jinjabread needs. See README.md for the per-tool
+messy input, the properties jinjabread needs. See README.md for the per-tool
 tradeoffs this produces. The comparators are not project dependencies; install
 whichever ones you want (see README.md for pinned versions):
 
@@ -40,7 +40,7 @@ def _node_formatter(argv):
 
 
 def formatters():
-    # jinjabread is the first row, as the reference — it meets the bar by
+    # jinjabread is the first row, as the reference: it meets the bar by
     # construction. The rows that matter are where the alternatives fall short.
     tools = dict(in_process_printers())
     for name, argv in [

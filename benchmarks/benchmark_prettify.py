@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Time prettify_html against the HTML pretty-printers people reach for.
 
-A manual, run-when-curious benchmark — not part of CI (perf is machine-dependent,
+A manual, run-when-curious benchmark, not part of CI (perf is machine-dependent,
 so a threshold assertion would be flaky). Each pretty-printer is timed end-to-end
 (HTML string in -> pretty string out, i.e. parse + serialize) across a few input
 sizes, taking the best of several repeats after a warm-up.
@@ -71,14 +71,14 @@ def in_process_printers():
             h, "html.parser"
         ).prettify()
     except ImportError:
-        print("(bs4 skipped — pip install beautifulsoup4)")
+        print("(bs4 skipped: pip install beautifulsoup4)")
 
     try:
         import prettierfier
 
         printers["prettierfier"] = prettierfier.prettify_html
     except ImportError:
-        print("(prettierfier skipped — pip install prettierfier)")
+        print("(prettierfier skipped: pip install prettierfier)")
 
     try:
         from tidylib import tidy_document
@@ -86,9 +86,9 @@ def in_process_printers():
         tidy_document("<p>x</p>")  # probe: raises OSError if libtidy is absent
         printers["html tidy"] = lambda h: tidy_document(h)[0]
     except ImportError:
-        print("(html tidy skipped — pip install pytidylib)")
+        print("(html tidy skipped: pip install pytidylib)")
     except OSError:
-        print("(html tidy skipped — install the system libtidy library)")
+        print("(html tidy skipped: install the system libtidy library)")
 
     return printers
 
@@ -115,7 +115,7 @@ def node_results():
     harness = Path(__file__).with_name("node_bench.js")
     if not (node and npm and harness.exists()):
         print(
-            "(prettier / js-beautify skipped — Node + `npm install -g prettier js-beautify`)"
+            "(prettier / js-beautify skipped: Node + `npm install -g prettier js-beautify`)"
         )
         return {}
     node_path = subprocess.run(
@@ -129,9 +129,7 @@ def node_results():
         env={**os.environ, "NODE_PATH": node_path},
     )
     if result.returncode != 0:
-        print(
-            "(prettier / js-beautify skipped — `npm install -g prettier js-beautify`)"
-        )
+        print("(prettier / js-beautify skipped: `npm install -g prettier js-beautify`)")
         return {}
     return json.loads(result.stdout)
 
@@ -160,7 +158,7 @@ def main():
                 )
 
     print("\nms/call is absolute; the last column is relative to jinjabread.")
-    print("Outputs differ between tools — read this as relative cost, not a ranking.")
+    print("Outputs differ between tools, so read this as relative cost, not a ranking.")
 
 
 if __name__ == "__main__":
