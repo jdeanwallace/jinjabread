@@ -3,7 +3,7 @@
 
 Re-downloads the serializer `*.test` files (and the LICENSE) from html5lib-tests
 at a given ref, records the resolved commit in `COMMIT`, and reports what changed.
-Run it by hand, then review the diff and run the suite before committing — a bump
+Run it by hand, then review the diff and run the suite before committing. A bump
 is a deliberate dependency roll, not something the everyday test run does over the
 network.
 
