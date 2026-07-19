@@ -1,23 +1,46 @@
 version: 2.1
+
 _definitions:
   - &semver_pattern /^\d+\.\d+\.\d+.*/
+
 executors:
   python:
     docker:
       - image: cimg/python:3.13.5
-jobs:
-  test-python:
-    executor: python
+    environment:
+      # Keep uv's download cache at a fixed path so it can be cached between runs.
+      UV_CACHE_DIR: /home/circleci/.cache/uv
+
+commands:
+  install-uv:
+    description: Install the pinned uv and restore its download cache.
     steps:
-      - checkout
       - run:
           name: Install uv
           command: |
             curl -LsSf https://astral.sh/uv/0.11.28/install.sh | sh
             echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - restore_cache:
+          keys:
+            - uv-v1-{{ checksum "uv.lock" }}
+            - uv-v1-
+
+jobs:
+  test-python:
+    executor: python
+    steps:
+      - checkout
+      - install-uv
       - run:
           name: Install dependencies
           command: uv sync --locked
+      - run:
+          name: Prune uv cache for CI
+          command: uv cache prune --ci
+      - save_cache:
+          key: uv-v1-{{ checksum "uv.lock" }}
+          paths:
+            - /home/circleci/.cache/uv
       - run:
           name: Check style
           command: uv run black --check .
@@ -33,17 +56,14 @@ jobs:
     executor: python
     steps:
       - checkout
-      - run:
-          name: Install uv
-          command: |
-            curl -LsSf https://astral.sh/uv/0.11.28/install.sh | sh
-            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$BASH_ENV"
+      - install-uv
       - run:
           name: Create build
           command: uv build
       - run:
           name: Upload build
           command: uv run twine upload dist/*
+
 workflows:
   main:
     jobs:
