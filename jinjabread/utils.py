@@ -5,7 +5,49 @@ import dataclasses
 import lxml.etree
 import lxml.html
 
-INLINE_TAGS = lxml.html.defs.special_inline_tags
+# HTML phrasing (inline) elements. Their contents are never reflowed and the
+# whitespace directly around them is significant, so we keep them, and any text
+# adjacent to them, on a single line to avoid altering how they render.
+INLINE_TAGS = frozenset(
+    {
+        "a",
+        "abbr",
+        "b",
+        "bdi",
+        "bdo",
+        "br",
+        "cite",
+        "code",
+        "data",
+        "dfn",
+        "em",
+        "i",
+        "img",
+        "kbd",
+        "mark",
+        "q",
+        "rp",
+        "rt",
+        "ruby",
+        "s",
+        "samp",
+        "small",
+        "span",
+        "strong",
+        "sub",
+        "sup",
+        "time",
+        "u",
+        "var",
+        "wbr",
+    }
+)
+
+# Elements whose content is whitespace-sensitive or raw (non-HTML) text. They
+# are emitted verbatim, exactly as parsed, so their content is never collapsed,
+# re-indented or re-escaped.
+OPAQUE_TAGS = frozenset({"pre", "textarea", "script", "style"})
+
 VOID_TAGS = lxml.html.defs.empty_tags
 INDENT = "  "
 
@@ -18,6 +60,7 @@ class Context:
     is_raw: bool
     is_void: bool
     is_inline: bool
+    is_opaque: bool
     node: lxml.etree._Element
 
 
@@ -34,80 +77,101 @@ def traverse(node, depth=0):
     tag = "" if is_raw else node.tag.lower()
     is_void = tag in VOID_TAGS
     is_inline = tag in INLINE_TAGS
+    is_opaque = tag in OPAQUE_TAGS
 
-    # Opening tag.
-    yield Context(
-        action="open",
-        tag=tag,
-        depth=depth,
-        is_raw=is_raw,
-        is_void=is_void,
-        is_inline=is_inline,
-        node=node,
-    )
-
-    # Text inside element.
-    if not (is_void or is_raw) and node.text and node.text.strip():
-        yield Context(
-            action="text",
+    def context(action):
+        return Context(
+            action=action,
             tag=tag,
             depth=depth,
             is_raw=is_raw,
             is_void=is_void,
             is_inline=is_inline,
+            is_opaque=is_opaque,
             node=node,
         )
 
+    # Opening tag. Void, raw and opaque nodes are leaves: their inner content is
+    # either absent or emitted verbatim with the opening tag.
+    yield context("open")
+    is_leaf = is_void or is_raw or is_opaque
+
+    # Text inside element.
+    if not is_leaf and node.text:
+        yield context("text")
+
     # Children nodes.
-    if not (is_void or is_raw):
+    if not is_leaf:
         for child in node:
             yield from traverse(child, depth + 1)
 
     # Closing tag.
-    if not (is_void or is_raw):
-        yield Context(
-            action="close",
-            tag=tag,
-            depth=depth,
-            is_raw=is_raw,
-            is_void=is_void,
-            is_inline=is_inline,
-            node=node,
-        )
+    if not is_leaf:
+        yield context("close")
 
     # Trailing text.
-    if not is_raw and node.tail and node.tail.strip():
-        yield Context(
-            action="tail",
-            tag=tag,
-            depth=depth,
-            is_raw=is_raw,
-            is_void=is_void,
-            is_inline=is_inline,
-            node=node,
-        )
+    if node.tail:
+        yield context("tail")
+
+
+def leads_with_newline(context, prev_context):
+    """Whether emitting `context` starts on a fresh, indented line."""
+    if context is None:
+        return True
+    match context.action:
+        case "open":
+            return context.depth > 0 and (
+                not context.is_inline
+                and not context.is_raw
+                or prev_context is not None
+                and not prev_context.is_inline
+                and not prev_context.is_raw
+            )
+        case "text" | "close":
+            return not context.is_inline
+        case _:  # tail
+            return False
+
+
+def collapse_whitespace(text, *, keep_leading, keep_trailing):
+    """Collapse whitespace runs, keeping boundary spaces only where significant.
+
+    A boundary space is dropped at block edges (where a newline is inserted
+    instead) and kept next to inline content, so words never run together.
+    """
+    text = re.sub(r"\s+", " ", text)
+    has_leading = text.startswith(" ")
+    has_trailing = text.endswith(" ")
+    core = text.strip()
+    if not core:
+        keep = (has_leading and keep_leading) or (has_trailing and keep_trailing)
+        return " " if keep else ""
+    if has_leading and keep_leading:
+        core = " " + core
+    if has_trailing and keep_trailing:
+        core = core + " "
+    return core
 
 
 def serialize(root):
     if root.tag == "html":
         yield "<!DOCTYPE html>\n"
 
-    prev_context = None
-    for context in traverse(root):
-        has_children = len(context.node) > 0
+    contexts = list(traverse(root))
+    for index, context in enumerate(contexts):
+        prev_context = contexts[index - 1] if index > 0 else None
+        next_context = contexts[index + 1] if index + 1 < len(contexts) else None
         padding = context.depth * INDENT
 
         match context.action:
             case "open":
-                if context.depth > 0 and (
-                    not context.is_inline
-                    and not context.is_raw
-                    or not prev_context.is_inline
-                    and not prev_context.is_raw
-                ):
+                if leads_with_newline(context, prev_context):
                     yield f"\n{padding}"
                 if context.is_raw:
-                    yield lxml.html.tostring(context.node).decode()
+                    yield lxml.html.tostring(context.node, with_tail=False).decode()
+                elif context.is_opaque:
+                    # Emit the whole subtree verbatim to preserve its whitespace.
+                    yield lxml.html.tostring(context.node, with_tail=False).decode()
                 else:
                     attrs = "".join(
                         f' {key}="{html.escape(value, quote=True)}"'
@@ -118,25 +182,27 @@ def serialize(root):
                         yield "/"
                     yield ">"
             case "text":
-                if not context.is_inline:
-                    yield f"\n{padding + INDENT}"
-                # Collapse multiple whitespaces into a single whitespace.
-                text = re.sub(r"\s+", " ", context.node.text)
-                # Strip leading whitespace.
-                text = text.lstrip()
-                # Strip trailing whitespace.
-                if not has_children:
-                    text = text.rstrip()
-                yield html.escape(text, quote=False)
+                text = collapse_whitespace(
+                    context.node.text,
+                    keep_leading=context.is_inline,
+                    keep_trailing=not leads_with_newline(next_context, context),
+                )
+                if text:
+                    if not context.is_inline:
+                        yield f"\n{padding + INDENT}"
+                    yield html.escape(text, quote=False)
             case "close":
                 if not context.is_inline:
                     yield f"\n{padding}"
                 yield f"</{context.tag}>"
             case "tail":
-                tail = context.node.tail.strip()
-                yield html.escape(tail, quote=False)
-
-        prev_context = context
+                tail = collapse_whitespace(
+                    context.node.tail,
+                    keep_leading=context.is_inline,
+                    keep_trailing=not leads_with_newline(next_context, context),
+                )
+                if tail:
+                    yield html.escape(tail, quote=False)
 
 
 def prettify_html(text):

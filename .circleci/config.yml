@@ -1,57 +1,55 @@
 version: 2.1
+
 _definitions:
   - &semver_pattern /^\d+\.\d+\.\d+.*/
+
 executors:
   python:
     docker:
-      - image: cimg/python:3.12.1
+      - image: cimg/python:3.13.5
+
+commands:
+  install-uv:
+    description: Install the pinned uv.
+    steps:
+      - run:
+          name: Install uv
+          command: |
+            curl --fail --location --silent --show-error https://astral.sh/uv/0.11.28/install.sh | sh
+            echo 'export PATH="${HOME}/.local/bin:${PATH}"' >> "${BASH_ENV}"
+
 jobs:
   test-python:
     executor: python
     steps:
       - checkout
+      - install-uv
       - run:
-          name: Create virtual environment
-          command: |
-            python -m venv venv
-            . venv/bin/activate
-            pip install pip pip-tools --upgrade
-            pip-sync requirements.txt
+          name: Install dependencies
+          command: uv sync --locked
       - run:
           name: Check style
-          command: |
-            . venv/bin/activate
-            black --check .
+          command: uv run black --check .
       - run:
           name: Run tests
           command: |
-            . venv/bin/activate
-            coverage run --source jinjabread -m unittest discover .
-            coverage report
-            coverage html
+            uv run coverage run --source jinjabread -m unittest discover .
+            uv run coverage report
+            uv run coverage html
       - store_artifacts:
           path: htmlcov
   publish-python-package:
     executor: python
     steps:
       - checkout
-      - run:
-          name: Create virtual environment
-          command: |
-            python -m venv venv
-            . venv/bin/activate
-            pip install pip pip-tools --upgrade
-            pip-sync requirements.txt
+      - install-uv
       - run:
           name: Create build
-          command: |
-            . venv/bin/activate
-            python -m build
+          command: uv build
       - run:
           name: Upload build
-          command: |
-            . venv/bin/activate
-            python -m twine upload dist/*
+          command: uv run twine upload dist/*
+
 workflows:
   main:
     jobs:

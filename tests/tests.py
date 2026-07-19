@@ -298,27 +298,189 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
             jinjabread.prettify_html(text),
         )
 
+    def test_prettify_html_inline_link_mid_sentence(self):
+        text = '<p>So as a form of <a href="/x">nesting</a>, we built our own.</p>'
+        self.assertEqual(
+            """
+<p>
+  So as a form of
+  <a href="/x">nesting</a>, we built our own.
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
 
-#     def test_prettify_html_anchor(self):
-#         content_path = self.working_dir / "content" / "home.html"
-#         content_path.parent.mkdir(parents=True, exist_ok=True)
-#         with content_path.open("w") as file:
-#             file.write(
-#                 """
-#                 <p>Hello, here's a <a href="#home">link</a>.</p>
-#                 """
-#             )
+    def test_prettify_html_inline_em_mid_sentence(self):
+        text = "<p>This is my <em>emphasised</em> point.</p>"
+        self.assertEqual(
+            """
+<p>
+  This is my
+  <em>emphasised</em> point.
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
 
-#         jinjabread.build()
+    def test_prettify_html_inline_strong_mid_sentence(self):
+        text = "<p>The <strong>end</strong>.</p>"
+        self.assertEqual(
+            """
+<p>
+  The
+  <strong>end</strong>.
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
 
-#         self.assertEqual(
-# """
-# <p>
-#   Hello, here's a <a href="#home">link</a>.
-# </p>
-# """.strip(),
-#             Path("public/home.html").read_text(),
-#         )
+    def test_prettify_html_inline_code_mid_sentence(self):
+        text = "<p>Install with <code>pip install jinjabread</code> today.</p>"
+        self.assertEqual(
+            """
+<p>
+  Install with
+  <code>pip install jinjabread</code> today.
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_no_space_before_punctuation(self):
+        text = '<p>Click <a href="/x">here</a>.</p>'
+        self.assertEqual(
+            """
+<p>
+  Click
+  <a href="/x">here</a>.
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_inline_at_block_start(self):
+        text = '<p><a href="/x">Home</a> is where it starts.</p>'
+        self.assertEqual(
+            """
+<p>
+  <a href="/x">Home</a> is where it starts.
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_inline_at_block_end(self):
+        text = '<p>It ends at <a href="/x">home</a></p>'
+        self.assertEqual(
+            """
+<p>
+  It ends at
+  <a href="/x">home</a>
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_adjacent_inline_with_space(self):
+        text = "<p><em>a</em> <strong>b</strong></p>"
+        self.assertEqual(
+            """
+<p>
+  <em>a</em> <strong>b</strong>
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_nested_inline_preserves_spaces(self):
+        text = '<p>See <a href="/x">the <em>full</em> guide</a> now.</p>'
+        self.assertEqual(
+            """
+<p>
+  See
+  <a href="/x">the <em>full</em> guide</a> now.
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_inline_words_keep_spaces(self):
+        text = "<p>one <em>two</em> three <strong>four</strong> five</p>"
+        self.assertEqual(
+            """
+<p>
+  one
+  <em>two</em> three <strong>four</strong> five
+</p>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_nested_block_lists(self):
+        text = "<div><ul><li>One</li><li>Two</li></ul></div>"
+        self.assertEqual(
+            """
+<div>
+  <ul>
+    <li>
+      One
+    </li>
+    <li>
+      Two
+    </li>
+  </ul>
+</div>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_pre_preserved_byte_for_byte(self):
+        text = "<pre>def f():\n    return 1\n\n\n    # three blank lines above\n</pre>"
+        self.assertEqual(text, jinjabread.prettify_html(text))
+
+    def test_prettify_html_pre_code_preserved_byte_for_byte(self):
+        text = "<pre><code>a = 1\n  b = 2\n\nc = 3</code></pre>"
+        self.assertEqual(text, jinjabread.prettify_html(text))
+
+    def test_prettify_html_textarea_preserved_byte_for_byte(self):
+        text = "<textarea>  keep    these\n  spaces\n</textarea>"
+        self.assertEqual(text, jinjabread.prettify_html(text))
+
+    def test_prettify_html_script_content_not_escaped(self):
+        text = "<div><script>if (a < b && c > d) { run(); }</script></div>"
+        self.assertEqual(
+            """
+<div>
+  <script>if (a < b && c > d) { run(); }</script>
+</div>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_comment_tail_collapsed(self):
+        text = "<div><!-- note -->after   the    comment</div>"
+        self.assertEqual(
+            """
+<div>
+  <!-- note -->after the comment
+</div>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_is_idempotent(self):
+        for text in [
+            '<p>So as a form of <a href="/x">nesting</a>, we built our own.</p>',
+            "<pre>def f():\n    return 1\n</pre>",
+            "<div><script>if (a < b) { run(); }</script></div>",
+            "<p>one <em>two</em> three <strong>four</strong> five</p>",
+            "<div><ul><li>One</li><li>Two</li></ul></div>",
+            "<div><!-- note -->after the comment</div>",
+            "<html><head><title>T</title></head><body><p>Hi <a href='/x'>x</a>!</p></body></html>",
+        ]:
+            with self.subTest(text=text):
+                once = jinjabread.prettify_html(text)
+                self.assertEqual(once, jinjabread.prettify_html(once))
 
 
 class ConfigTest(TestTempWorkingDirMixin, unittest.TestCase):
@@ -403,6 +565,28 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
             """
             <h1>Hello, World</h1>
             """,
+            Path("public/home.html").read_text(),
+        )
+
+    def test_html_content_inline_anchor_intact(self):
+        content_path = self.working_dir / "content" / "home.html"
+        content_path.parent.mkdir(parents=True, exist_ok=True)
+        with content_path.open("w") as file:
+            file.write(
+                """
+                <p>Hello, here's a <a href="#home">link</a>.</p>
+                """
+            )
+
+        jinjabread.build()
+
+        self.assertEqual(
+            """
+<p>
+  Hello, here's a
+  <a href="#home">link</a>.
+</p>
+""".strip(),
             Path("public/home.html").read_text(),
         )
 
