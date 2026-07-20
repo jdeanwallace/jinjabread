@@ -1,11 +1,31 @@
 """jinjabread's own HTML pretty-printer.
 
-`prettify_html` re-serializes generated HTML with readable indentation using a
-custom lxml-based serializer that is inline/block/preformatted-aware. It is
-deliberately NOT one of the off-the-shelf options: BeautifulSoup's `prettify`
-reflows inline elements and breaks their rendering; lxml's `pretty_print` /
-`etree.indent` and the `prettierfier` package inject rendering-affecting
-whitespace or don't normalize messy Jinja/Markdown input.
+`prettify_html` re-serializes generated HTML with readable indentation, using a
+custom lxml-based serializer that distinguishes inline, block, and preformatted
+content. It is deliberately not an off-the-shelf tool: BeautifulSoup's
+`prettify` reflows inline elements and breaks their rendering, and lxml's
+`pretty_print`, `etree.indent`, and the `prettierfier` package inject
+rendering-affecting whitespace or fail to normalize messy Jinja/Markdown input.
+
+Three terms carry the whole design, and keeping them straight is the entire
+correctness story:
+
+Piece
+    One item of inline content: a fragment of text, or a single inline element
+    together with the text that trails it (its tail).
+
+Inline run (also called an inline sequence)
+    A maximal, contiguous group of pieces that render together on one line. A
+    run is atomic. The serializer never breaks a line inside a run and never
+    changes the whitespace between its pieces, because either edit changes what
+    a browser shows: `one <em>two</em> three` must not become `one twothree`.
+    This is where the "never change the rendering" guarantee lives.
+
+Segment
+    What an element's content splits into: either an inline run, laid out on one
+    line, or a single block-level child, given its own line and serialized
+    recursively. Block boundaries collapse whitespace, so segments (unlike the
+    runs inside them) are free to reflow.
 """
 
 import importlib
@@ -53,7 +73,7 @@ INLINE_TAGS = frozenset(
 
 # Elements whose content is whitespace-sensitive or raw (non-HTML) text. They
 # are emitted verbatim, exactly as parsed, so their content is never collapsed,
-# re-indented or re-escaped.
+# re-indented, or re-escaped.
 OPAQUE_TAGS = frozenset({"pre", "textarea", "script", "style"})
 
 # Block elements kept on a single line when their whole content is one inline
@@ -67,19 +87,23 @@ VOID_TAGS = lxml.html.defs.empty_tags
 INDENT = "  "
 
 
-def is_raw(node):
-    # Comments and processing instructions have a callable tag, not a string.
+def is_comment_or_pi(node):
+    """Return whether `node` is a comment or processing instruction.
+
+    lxml represents these with a callable `tag` instead of a string. They have
+    no element children to lay out, so the serializer emits them verbatim.
+    """
     return not (hasattr(node, "tag") and isinstance(node.tag, str))
 
 
 def is_inlineable(node):
-    """Whether `node` can sit inside a single-line inline run.
+    """Return whether `node` can sit inside a single-line inline run.
 
     Text and comments always can. An element can only if it is a phrasing
-    element whose descendants are themselves all inlineable, so nothing forces
-    it onto its own line.
+    element whose descendants are themselves all inlineable, so nothing inside
+    it forces a line break that would push it onto its own line.
     """
-    if is_raw(node):
+    if is_comment_or_pi(node):
         return True
     tag = node.tag.lower()
     if tag in OPAQUE_TAGS:
@@ -92,15 +116,23 @@ def is_inlineable(node):
 
 
 def render_attributes(node):
-    # Preserve the author's attribute order.
+    """Render an element's attributes in the author's original order.
+
+    Every value is HTML-escaped, including quotes, so a value containing `"` or
+    `&` cannot break out of or corrupt the tag.
+    """
     return "".join(
-        f' {key}="{html.escape(value, quote=True)}"'
-        for key, value in node.attrib.items()
+        f' {name}="{html.escape(value, quote=True)}"'
+        for name, value in node.attrib.items()
     )
 
 
 def inline_pieces(node):
-    """Yield an element's content as an ordered list of inline pieces."""
+    """Return an element's content as an ordered list of inline pieces.
+
+    Each piece is a ("text", str) fragment or a ("node", element) child, in
+    document order, including the text that trails each child (its tail).
+    """
     pieces = []
     if node.text:
         pieces.append(("text", node.text))
@@ -112,24 +144,27 @@ def inline_pieces(node):
 
 
 def render_inline_run(pieces):
-    """Render inline pieces to a single line.
+    """Render a run of inline pieces onto a single line.
 
-    Runs of whitespace collapse to one space and the run's outer edges are
-    trimmed (it sits between block-edge newlines), but every space between two
-    pieces is preserved, so adjacent words and elements never merge.
+    A run collapses interior whitespace to single spaces and trims its outer
+    edges, because the run sits between block-edge newlines. But it keeps every
+    space between two pieces, so adjacent words and elements never merge. This
+    is the atomic unit of the serializer: never insert a line break inside a run
+    and never drop a space between its pieces, or the browser renders it
+    differently.
     """
     parts = []
     pending_space = False
     for kind, value in pieces:
         if kind == "text":
             collapsed = re.sub(r"\s+", " ", value)
-            core = collapsed.strip()
-            if not core:
+            stripped_text = collapsed.strip()
+            if not stripped_text:
                 pending_space = pending_space or bool(collapsed)
                 continue
             if (pending_space or collapsed.startswith(" ")) and parts:
                 parts.append(" ")
-            parts.append(html.escape(core, quote=False))
+            parts.append(html.escape(stripped_text, quote=False))
             pending_space = collapsed.endswith(" ")
         else:
             if pending_space and parts:
@@ -140,7 +175,8 @@ def render_inline_run(pieces):
 
 
 def render_inline_element(node):
-    if is_raw(node):
+    """Render a single inline element and its content on one line."""
+    if is_comment_or_pi(node):
         return lxml.html.tostring(node, with_tail=False).decode()
     tag = node.tag.lower()
     attributes = render_attributes(node)
@@ -149,16 +185,20 @@ def render_inline_element(node):
     return f"<{tag}{attributes}>{render_inline_run(inline_pieces(node))}</{tag}>"
 
 
-def partition(node):
-    """Split an element's content into inline runs and block-level children.
+def partition_into_segments(node):
+    """Split an element's content into an ordered list of segments.
 
-    Consecutive inline pieces (text, comments, inline elements) group into one
-    run; every non-inlineable child becomes its own block segment.
+    Each segment is either an ("inline", run) pair, whose run is a maximal
+    sequence of consecutive inline pieces to render on one line, or a ("block",
+    child) pair for a child that gets its own line and is serialized
+    recursively. Grouping the inline pieces into runs first is what preserves
+    their whitespace; only the block boundaries between segments are free to
+    reflow.
     """
     segments = []
     run = []
 
-    def flush():
+    def flush_run():
         if run:
             segments.append(("inline", run.copy()))
             run.clear()
@@ -169,21 +209,27 @@ def partition(node):
         if is_inlineable(child):
             run.append(("node", child))
         else:
-            flush()
+            flush_run()
             segments.append(("block", child))
         if child.tail:
             run.append(("text", child.tail))
-    flush()
+    flush_run()
     return segments
 
 
-def render(node, depth):
-    """Serialize a node's subtree, indenting block structure at `depth`."""
-    if is_raw(node):
+def render_node(node, depth):
+    """Serialize a node and its subtree, indenting block structure at `depth`.
+
+    Comments and preformatted/raw elements are emitted verbatim and void
+    elements self-close. Every other element is split into segments (see
+    `partition_into_segments`) and laid out either as a single inline run or as
+    block children on their own indented lines.
+    """
+    if is_comment_or_pi(node):
         return lxml.html.tostring(node, with_tail=False).decode()
     tag = node.tag.lower()
     if tag in OPAQUE_TAGS:
-        # Emit whitespace-sensitive elements verbatim, exactly as parsed.
+        # Emit whitespace-sensitive and raw-text elements verbatim, as parsed.
         return lxml.html.tostring(node, with_tail=False).decode()
 
     attributes = render_attributes(node)
@@ -192,52 +238,58 @@ def render(node, depth):
 
     open_tag = f"<{tag}{attributes}>"
     close_tag = f"</{tag}>"
-    inline = tag in INLINE_TAGS
+    is_inline = tag in INLINE_TAGS
     indent = depth * INDENT
     child_indent = (depth + 1) * INDENT
 
-    segments = partition(node)
+    segments = partition_into_segments(node)
     if not any(kind == "block" for kind, _ in segments):
         run = render_inline_run(segments[0][1]) if segments else ""
         if not run:
             return (
-                open_tag + close_tag if inline else f"{open_tag}\n{indent}{close_tag}"
+                open_tag + close_tag
+                if is_inline
+                else f"{open_tag}\n{indent}{close_tag}"
             )
-        if inline or tag in COMPACT_TAGS:
+        # Inline elements, and compact block elements (COMPACT_TAGS), stay on
+        # one line when their whole content is a single inline run.
+        if is_inline or tag in COMPACT_TAGS:
             return f"{open_tag}{run}{close_tag}"
         return f"{open_tag}\n{child_indent}{run}\n{indent}{close_tag}"
 
     parts = [open_tag]
     for kind, value in segments:
         if kind == "block":
-            parts.append(f"\n{child_indent}{render(value, depth + 1)}")
+            parts.append(f"\n{child_indent}{render_node(value, depth + 1)}")
         else:
             run = render_inline_run(value)
             if run:
                 parts.append(f"\n{child_indent}{run}")
-    parts.append(close_tag if inline else f"\n{indent}{close_tag}")
+    parts.append(close_tag if is_inline else f"\n{indent}{close_tag}")
     return "".join(parts)
 
 
 def prettify_html(text):
+    """Pretty-print `text` without changing how it renders."""
     if not text:
         return ""
 
     root = lxml.html.fromstring(text)
     if root.tag == "html":
-        # A full document, or a document-level fragment the parser promoted (e.g. a
-        # lone <head> or <script>): emit it with a doctype, as lxml resolved it.
-        return "<!DOCTYPE html>\n" + render(root, 0)
+        # A full document, or a document-level fragment the parser promoted (for
+        # example a lone <head> or <script>): emit it with a doctype, as lxml
+        # resolved it.
+        return "<!DOCTYPE html>\n" + render_node(root, 0)
 
-    # A body-level fragment. lxml.html.fromstring wraps multiple roots or leading
-    # text in a synthetic <div>/<span>; re-parse and render the top-level pieces so
-    # that injected wrapper never reaches the output. A single-rooted fragment
-    # renders identically either way.
+    # A body-level fragment. lxml.html.fromstring wraps multiple roots or
+    # leading text in a synthetic <div>/<span>; re-parse and render the
+    # top-level pieces so that injected wrapper never reaches the output. A
+    # single-rooted fragment renders identically either way.
     wrapper = lxml.html.fragment_fromstring(text, create_parent="div")
     rendered = []
-    for kind, value in partition(wrapper):
+    for kind, value in partition_into_segments(wrapper):
         if kind == "block":
-            rendered.append(render(value, 0))
+            rendered.append(render_node(value, 0))
         else:
             run = render_inline_run(value)
             if run:
