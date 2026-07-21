@@ -1,9 +1,8 @@
 """Property tests: pretty-printing must preserve rendering and be idempotent.
 
 The oracle in `tests.invariants` decides correctness without a golden string, so
-these tests cover far more than the hand-written snapshot tests. The cases marked
-`expectedFailure` document real defects in the current token-stream serializer;
-the serializer-refactor branch fixes them and removes the markers.
+these tests cover far more than the hand-written snapshot tests: a curated corpus
+and a hypothesis generator both assert the same invariants.
 """
 
 import unittest
@@ -13,9 +12,8 @@ from hypothesis import strategies as st
 
 from tests import invariants
 
-# Inputs the serializer already handles correctly. These are regression
-# protection and must keep passing on every branch.
-GOOD_INPUTS = [
+# Every input must satisfy render-invariance and idempotence.
+CORPUS = [
     '<p>So as a form of <a href="/x">nesting</a>, we built our own.</p>',
     "<p>one <em>two</em> three <strong>four</strong> five</p>",
     "<p>Use <code>x = 1</code> here.</p>",
@@ -27,6 +25,13 @@ GOOD_INPUTS = [
     "<div><p>first</p><p>second</p></div>",
     '<main><h1>Title</h1><p>Body with <a href="/x">a link</a>.</p></main>',
     "<div><!-- a comment -->and text after it</div>",
+    # Block text adjacent to an inline element must not gain a space.
+    '<p>(<a href="/x">link</a>)</p>',
+    "<p>foo<em>bar</em></p>",
+    "<p>line one<br/>line two</p>",
+    # A block ending in an inline element must stay idempotent.
+    "<p><em>a</em> <strong>b</strong></p>",
+    "<p><em>a</em><strong>b</strong></p>",
     # Nested inline runs with significant inter-word whitespace.
     "<p>a <em>b <strong>c</strong> d</em> e</p>",
     # Entities in text and attributes must round-trip.
@@ -38,31 +43,20 @@ GOOD_INPUTS = [
     "<div><section><ul><li>x</li><li>y</li></ul></section></div>",
     # Preformatted content with entities is preserved.
     "<pre>if x &lt; y &amp;&amp; y &gt; z:\n    go()\n</pre>",
-]
-
-# Inputs that currently VIOLATE the invariants. The serializer-refactor branch
-# makes these pass; until then they are expected failures that pin the defects.
-KNOWN_FAILING_INPUTS = [
-    '<p>(<a href="/x">link</a>)</p>',  # render: inserts a space -> "( link)".
-    "<p>foo<em>bar</em></p>",  # render: inserts a space -> "foo bar".
-    "<p>line one<br/>line two</p>",  # render: inserts a space before the break.
-    "<p><em>a</em> <strong>b</strong></p>",  # idempotence: gains a trailing space.
-    "<p><em>a</em><strong>b</strong></p>",  # idempotence: gains a trailing space.
+    # Fragments with several top-level roots, or leading text, must render without
+    # gaining a wrapper element (lxml.html.fromstring would inject a <div>/<span>).
+    "<p>first</p><p>second</p>",
+    '<h1>Title</h1><p>Body with <a href="/x">a link</a>.</p>',
+    "Leading text, then <em>inline</em> and <strong>more</strong>.",
+    "<ul><li>a</li></ul><ul><li>b</li></ul>",
 ]
 
 
 class CorpusInvariantTest(unittest.TestCase):
-    def test_good_inputs_are_invariant(self):
-        for html in GOOD_INPUTS:
+    def test_corpus_is_invariant(self):
+        for html in CORPUS:
             with self.subTest(html=html):
                 invariants.assert_prettify_invariant(html)
-
-    @unittest.expectedFailure
-    def test_known_failing_inputs(self):
-        # Fixed by the serializer-refactor branch; delete this test and fold the
-        # inputs into GOOD_INPUTS once the serializer is rewritten.
-        for html in KNOWN_FAILING_INPUTS:
-            invariants.assert_prettify_invariant(html)
 
 
 # --- Generated inputs -------------------------------------------------------
@@ -125,17 +119,18 @@ _block = st.recursive(
 
 _documents = st.builds(lambda body: f"<div>{body}</div>", _block)
 
+# Bare fragments: several top-level roots (or leading text) with no single wrapping
+# element, so the serializer is exercised on the inputs that used to gain a wrapper.
+_fragments = st.builds(_join, st.lists(st.tuples(_ws, _block), min_size=2, max_size=3))
+
 
 class GeneratedInvariantTest(unittest.TestCase):
-    @unittest.expectedFailure
     @settings(
         max_examples=400,
         deadline=None,
         derandomize=True,
         suppress_health_check=[HealthCheck.too_slow],
     )
-    @given(html=_documents)
+    @given(html=st.one_of(_documents, _fragments))
     def test_generated_inputs_are_invariant(self, html):
-        # Currently finds the same defect classes as KNOWN_FAILING_INPUTS; the
-        # serializer-refactor branch makes this pass and removes the marker.
         invariants.assert_prettify_invariant(html)
