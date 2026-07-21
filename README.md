@@ -56,8 +56,6 @@ With `prettify_html` enabled (the default), jinjabread re-indents every generate
 - **It parses and repairs markup.** Every page round-trips through lxml's HTML parser, so unclosed tags are closed and misnested tags are corrected, matching how a browser reads the input. The output is always well-formed HTML; invalid or non-standard structure is not preserved verbatim.
 - **It distinguishes documents from fragments.** A whole document, or a document-level element such as a lone `<script>` or `<head>`, is emitted as a complete document with an HTML5 doctype; a body-level fragment is emitted without a doctype or wrapper.
 
-`tests/test_contract.py` verifies each of these guarantees, and `tests/test_prettify_invariants.py` checks render-preservation and idempotence exhaustively over a corpus and generated inputs.
-
 ## File structure
 
 ### Important files and directories
