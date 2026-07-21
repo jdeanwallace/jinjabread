@@ -73,7 +73,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <span>Hello</span>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -86,7 +86,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <div>
   <span>Hello</span>.
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -95,7 +95,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <span><span>Hello, World!</span></span>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -104,7 +104,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <span><span>Hello, World!</span><span>Hello, Earth!</span></span>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -117,7 +117,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   Hello, World!
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -131,7 +131,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
   </div>
   !
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -147,7 +147,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
     Hello, Earth!
   </p>
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -161,20 +161,20 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   Hello, Earth!
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
     def test_prettify_html_root_text_and_inline(self):
         text = """Hello, <b>World</b>!"""
         self.assertEqual(
-            """Hello, <b>World</b>!""",
+            "Hello, <b>World</b>!\n",
             jinjabread.prettify_html(text),
         )
 
     def test_prettify_html_bare_text(self):
         text = """Just text."""
-        self.assertEqual("""Just text.""", jinjabread.prettify_html(text))
+        self.assertEqual("Just text.\n", jinjabread.prettify_html(text))
 
     def test_prettify_html_inline_tag_wraps_block_tag(self):
         text = """<a href="#home"><div>Hello, World!</div></a>"""
@@ -184,7 +184,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
   <div>
     Hello, World!
   </div></a>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -201,7 +201,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
   <div>
     Hello, Earth!
   </div></a>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -217,7 +217,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
   <div>
     Hello, Earth!
   </div></a>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -226,7 +226,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <span><!-- Hello, World! --></span>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -235,7 +235,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <span><!-- Hello, World! --><!-- Hello, Earth! --></span>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -246,7 +246,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <div>
   <span>Hello, World!</span>
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -257,7 +257,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <div>
   <span>Hello,</span><span>World!</span>
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -266,7 +266,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         self.assertEqual(
             """
 <hr/>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -277,7 +277,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <div>
   <!-- Hello, World! -->
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -288,7 +288,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <div>
   <!-- Hello, World! --><!-- Hello, Earth! -->
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -318,7 +318,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
   <body>
   </body>
 </html>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -329,7 +329,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   So as a form of <a href="/x">nesting</a>, we built our own.
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -340,7 +340,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   This is my <em>emphasised</em> point.
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -351,7 +351,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   The <strong>end</strong>.
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -362,7 +362,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   Install with <code>pip install jinjabread</code> today.
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -373,7 +373,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   Click <a href="/x">here</a>.
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -384,7 +384,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   <a href="/x">Home</a> is where it starts.
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -395,7 +395,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   It ends at <a href="/x">home</a>
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -406,7 +406,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   <em>a</em> <strong>b</strong>
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -417,7 +417,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   See <a href="/x">the <em>full</em> guide</a> now.
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -428,7 +428,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <p>
   one <em>two</em> three <strong>four</strong> five
 </p>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -442,7 +442,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
     <li>Two</li>
   </ul>
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -456,7 +456,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
     <td>Cell <a href="/x">two</a></td>
   </tr>
 </table>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -469,21 +469,21 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
     Paragraph
   </p>
 </li>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
     def test_prettify_html_pre_preserved_byte_for_byte(self):
         text = "<pre>def f():\n    return 1\n\n\n    # three blank lines above\n</pre>"
-        self.assertEqual(text, jinjabread.prettify_html(text))
+        self.assertEqual(text + "\n", jinjabread.prettify_html(text))
 
     def test_prettify_html_pre_code_preserved_byte_for_byte(self):
         text = "<pre><code>a = 1\n  b = 2\n\nc = 3</code></pre>"
-        self.assertEqual(text, jinjabread.prettify_html(text))
+        self.assertEqual(text + "\n", jinjabread.prettify_html(text))
 
     def test_prettify_html_textarea_preserved_byte_for_byte(self):
         text = "<textarea>  keep    these\n  spaces\n</textarea>"
-        self.assertEqual(text, jinjabread.prettify_html(text))
+        self.assertEqual(text + "\n", jinjabread.prettify_html(text))
 
     def test_prettify_html_script_content_not_escaped(self):
         text = "<div><script>if (a < b && c > d) { run(); }</script></div>"
@@ -492,7 +492,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <div>
   <script>if (a < b && c > d) { run(); }</script>
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -503,7 +503,7 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
 <div>
   <!-- note -->after the comment
 </div>
-""".strip(),
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
@@ -624,7 +624,7 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
 <p>
   Hello, here's a <a href="#home">link</a>.
 </p>
-""".strip(),
+""".lstrip(),
             Path("public/home.html").read_text(),
         )
 
