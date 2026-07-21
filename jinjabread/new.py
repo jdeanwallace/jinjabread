@@ -10,30 +10,25 @@ def new(*, project_dir=None):
 
     config_file = project_dir / CONFIG_FILENAME
     with config_file.open("w") as file:
-        file.write(
-            f"""
+        file.write(f"""
 [context]
   site_name = "{project_dir.name}"
   url_origin = "http://127.0.0.1:8000"
-""".lstrip()
-        )
+""".lstrip())
     content_path = project_dir / "content" / "index.md"
     content_path.parent.mkdir(parents=True)
     with content_path.open("w") as file:
-        file.write(
-            """
+        file.write("""
 ---
 author: me
 ---
 # Hello, World!
 This is my new website.
-""".lstrip()
-        )
+""".lstrip())
     layout_file = project_dir / "layouts" / "markdown.html"
     layout_file.parent.mkdir(parents=True)
     with layout_file.open("w") as file:
-        file.write(
-            """
+        file.write("""
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -46,5 +41,4 @@ This is my new website.
     <p>Created by {{ author }}.</p>
   </body>
 </html>
-""".lstrip()
-        )
+""".lstrip())
