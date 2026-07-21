@@ -46,6 +46,18 @@ python -m jinjabread serve mysite
 - Preview your static site locally with a built-in web server.
 - Prettify all generated HTML (because why not?)
 
+## HTML pretty-printing
+
+With `prettify_html` enabled (the default), jinjabread re-indents every generated page for readability. It is a rendering-preserving reformatter rather than a byte-preserving one, and it makes a specific contract:
+
+- **It preserves how the page renders.** The output displays identically to the input: inline elements are never broken across lines, significant whitespace is kept, and `pre`, `textarea`, `script`, and `style` content is emitted verbatim. Only insignificant whitespace between block-level elements changes.
+- **It is idempotent.** Prettifying already-pretty output changes nothing.
+- **It adds no wrapper of its own.** A body-level fragment, such as several top-level `<p>` elements or plain text, is emitted as-is and is never wrapped in a `<div>` or `<span>`.
+- **It parses and repairs markup.** Every page round-trips through lxml's HTML parser, so unclosed tags are closed and misnested tags are corrected, matching how a browser reads the input. The output is always well-formed HTML; invalid or non-standard structure is not preserved verbatim.
+- **It distinguishes documents from fragments.** A whole document, or a document-level element such as a lone `<script>` or `<head>`, is emitted as a complete document with an HTML5 doctype; a body-level fragment is emitted without a doctype or wrapper.
+
+`tests/test_contract.py` verifies each of these guarantees, and `tests/test_prettify_invariants.py` checks render-preservation and idempotence exhaustively over a corpus and generated inputs.
+
 ## File structure
 
 ### Important files and directories
