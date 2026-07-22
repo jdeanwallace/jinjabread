@@ -496,6 +496,20 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
             jinjabread.prettify_html(text),
         )
 
+    def test_prettify_html_preserves_ampersand_in_attribute(self):
+        # A Tailwind arbitrary variant like `[&>p]:prose` must survive verbatim:
+        # the `&` is not a character reference, so it is not escaped, and `>` is
+        # safe inside an attribute value.
+        text = '<div class="mt-6 [&>p]:prose">x</div>'
+        self.assertEqual(
+            """
+<div class="mt-6 [&>p]:prose">
+  x
+</div>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
     def test_prettify_html_comment_tail_collapsed(self):
         text = "<div><!-- note -->after   the    comment</div>"
         self.assertEqual(

@@ -115,15 +115,31 @@ def is_inlineable(node):
     return all(is_inlineable(child) for child in node)
 
 
+# Inside an attribute value, an ampersand needs escaping only when it could
+# begin a character reference: when a letter, digit, or "#" follows it. Every
+# other "&" is a literal, so a Tailwind class like `[&>p]:prose` is not mangled.
+_REFERENCE_AMPERSAND = re.compile(r"&(?=[A-Za-z0-9#])")
+
+
+def escape_attribute(value):
+    """Escape a double-quoted attribute value minimally.
+
+    Only the closing `"` and reference-starting ampersands would be misread; `<`,
+    `>`, and single quotes are safe inside a double-quoted value. Text content is
+    fully escaped elsewhere; attributes use this lighter touch so values like a
+    Tailwind class `[&>p]:prose` are not mangled.
+    """
+    return _REFERENCE_AMPERSAND.sub("&amp;", value).replace('"', "&quot;")
+
+
 def render_attributes(node):
     """Render an element's attributes in the author's original order.
 
-    Every value is HTML-escaped, including quotes, so a value containing `"` or
-    `&` cannot break out of or corrupt the tag.
+    Values are escaped minimally (see `escape_attribute`), staying well-formed
+    without over-escaping characters that browsers accept literally.
     """
     return "".join(
-        f' {name}="{html.escape(value, quote=True)}"'
-        for name, value in node.attrib.items()
+        f' {name}="{escape_attribute(value)}"' for name, value in node.attrib.items()
     )
 
 
