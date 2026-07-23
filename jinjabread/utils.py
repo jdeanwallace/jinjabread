@@ -118,6 +118,9 @@ def is_inlineable(node):
 # Inside an attribute value, an ampersand needs escaping only when it could
 # begin a character reference: when a letter, digit, or "#" follows it. Every
 # other "&" is a literal, so a Tailwind class like `[&>p]:prose` is not mangled.
+# This mirrors the parser's character-reference state, which only starts
+# consuming a reference on those characters:
+# https://html.spec.whatwg.org/multipage/parsing.html#character-reference-state
 _REFERENCE_AMPERSAND = re.compile(r"&(?=[A-Za-z0-9#])")
 
 
