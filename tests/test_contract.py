@@ -30,12 +30,12 @@ class PrettifyContractTest(unittest.TestCase):
     def test_keeps_preformatted_content_verbatim(self):
         """`pre`, `textarea`, `script`, and `style` content is left untouched."""
         text = "<pre>  two  spaces\tand a tab  </pre>"
-        self.assertEqual(text, jinjabread.prettify_html(text))
+        self.assertEqual(text + "\n", jinjabread.prettify_html(text))
 
     def test_adds_no_wrapper_around_a_fragment(self):
         """A body-level fragment is emitted as-is, with no wrapper element added."""
         self.assertEqual(
-            "<p>\n  a\n</p>\n<p>\n  b\n</p>",
+            "<p>\n  a\n</p>\n<p>\n  b\n</p>\n",
             jinjabread.prettify_html("<p>a</p><p>b</p>"),
         )
 
@@ -47,11 +47,11 @@ class PrettifyContractTest(unittest.TestCase):
         input. Invalid structure is not preserved verbatim.
         """
         self.assertEqual(
-            "<p>\n  unclosed <b>bold</b>\n</p>",
+            "<p>\n  unclosed <b>bold</b>\n</p>\n",
             jinjabread.prettify_html("<p>unclosed <b>bold"),
         )
         self.assertEqual(
-            "<b><i>x</i></b>",
+            "<b><i>x</i></b>\n",
             jinjabread.prettify_html("<b><i>x</b></i>"),
         )
 

@@ -294,8 +294,8 @@ def prettify_html(text):
     if root.tag == "html":
         # A full document, or a document-level fragment the parser promoted (for
         # example a lone <head> or <script>): emit it with a doctype, as lxml
-        # resolved it.
-        return "<!DOCTYPE html>\n" + render_node(root, 0)
+        # resolved it. Output ends with a trailing newline, as text files should.
+        return "<!DOCTYPE html>\n" + render_node(root, 0) + "\n"
 
     # A body-level fragment. lxml.html.fromstring wraps multiple roots or
     # leading text in a synthetic <div>/<span>; re-parse and render the
@@ -310,7 +310,7 @@ def prettify_html(text):
             run = render_inline_run(value)
             if run:
                 rendered.append(run)
-    return "\n".join(rendered)
+    return "\n".join(rendered) + "\n" if rendered else ""
 
 
 def load_page_class(dot_path):
