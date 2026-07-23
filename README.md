@@ -11,6 +11,8 @@ Inspired by [`staticjinja`](https://github.com/staticjinja/staticjinja), [`jekyl
 
 ## Install
 
+Requires Python 3.11 or newer.
+
 ```bash
 pip install jinjabread
 ```
