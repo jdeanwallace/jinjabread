@@ -507,6 +507,14 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
             jinjabread.prettify_html(text),
         )
 
+    def test_prettify_html_output_ends_with_newline(self):
+        # Generated files should end with a newline (the POSIX text-file
+        # convention), for both whole documents and body-level fragments.
+        document = jinjabread.prettify_html("<html><body><p>hi</p></body></html>")
+        self.assertTrue(document.endswith("\n"))
+        fragment = jinjabread.prettify_html("<p>a</p><p>b</p>")
+        self.assertTrue(fragment.endswith("\n"))
+
     def test_prettify_html_is_idempotent(self):
         for text in [
             '<p>So as a form of <a href="/x">nesting</a>, we built our own.</p>',
