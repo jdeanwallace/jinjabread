@@ -6,9 +6,18 @@
   name = "jinjabread"
   description = "An Python-based static site generator using Jinja templates."
   dynamic = ["version"]
-  requires-python = ">=3.13"
+  requires-python = ">=3.11"
   readme = "README.md"
   license = {file = "LICENSE"}
+  # Support the current non-EOL Pythons from our floor up. The floor is 3.11
+  # because config.py uses the stdlib tomllib (added in 3.11). requires-python
+  # stays uncapped so future Pythons keep installing; the window is documented
+  # here rather than capped.
+  classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+  ]
   dependencies = [
     "jinja2==3.1.6",
     "lxml==6.1.1",
