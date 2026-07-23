@@ -33,14 +33,22 @@
 
 [dependency-groups]
   dev = [
-    "black==25.1.0",
+    "black",
     "coverage",
     "html5lib",
     "hypothesis",
-    "twine==6.2.0",
+    "twine",
   ]
 
 [tool.setuptools]
   packages = ["jinjabread"]
 
 [tool.setuptools_scm]
+
+[tool.black]
+  # Pin black's target to our floor instead of capping requires-python. Capping
+  # requires-python is a packaging anti-pattern (it blocks installs on future
+  # Pythons), so it stays open at >=3.11; an open range makes black target the
+  # newest Python it knows and skip its AST safety check under the 3.11 we run.
+  # 3.11's output is valid on 3.11+.
+  target-version = ["py311"]

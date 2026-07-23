@@ -554,14 +554,12 @@ class ConfigTest(TestTempWorkingDirMixin, unittest.TestCase):
 
     def test_with_custom_config_file(self):
         with (self.working_dir / "custom.toml").open("w") as file:
-            file.write(
-                """
+            file.write("""
                 output_dir = "dist"
 
                 [context]
                   foo = "bar"
-                """
-            )
+                """)
 
         config = jinjabread.Config.load(config_file="custom.toml")
 
@@ -570,14 +568,12 @@ class ConfigTest(TestTempWorkingDirMixin, unittest.TestCase):
 
     def test_ignore_unexpected_config(self):
         with (self.working_dir / "custom.toml").open("w") as file:
-            file.write(
-                """
+            file.write("""
                 foo = "bar"
 
                 [custom]
                   foo = "bar"
-                """
-            )
+                """)
 
         jinjabread.Config.load(config_file="custom.toml")
 
@@ -592,11 +588,9 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <h1>Hello, World{# This is a comment #}</h1>
-                """
-            )
+                """)
 
         jinjabread.build()
 
@@ -611,11 +605,9 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <p>Hello, here's a <a href="#home">link</a>.</p>
-                """
-            )
+                """)
 
         jinjabread.build()
 
@@ -632,24 +624,20 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 {% extends 'markdown.html' %}
                 {% block body %}
                 <p>Blah blah blah</p>
                 {% endblock body %}
-                """
-            )
+                """)
         layout_path = self.working_dir / "layouts" / "markdown.html"
         layout_path.parent.mkdir(parents=True, exist_ok=True)
         with layout_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <h1>Hello, World</h1>
                 {% block body %}
                 {% endblock body %}
-                """
-            )
+                """)
 
         jinjabread.build()
 
@@ -665,20 +653,16 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <h1>Hello, World</h1>
                 {% include 'message.txt' %}
-                """
-            )
+                """)
         layout_path = self.working_dir / "layouts" / "message.txt"
         layout_path.parent.mkdir(parents=True, exist_ok=True)
         with layout_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <p>Blah blah blah</p>
-                """
-            )
+                """)
 
         jinjabread.build()
 
@@ -695,20 +679,16 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         content_path = self.working_dir / "content" / "home.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <h1>Hello, World</h1>
                 {% include 'message.txt' %}
-                """
-            )
+                """)
         content_path2 = self.working_dir / "content" / "message.txt"
         content_path2.parent.mkdir(parents=True, exist_ok=True)
         with content_path2.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <p>Blah blah blah</p>
-                """
-            )
+                """)
 
         jinjabread.build()
 
@@ -758,35 +738,27 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
         content_path = self.working_dir / "content" / "posts" / "index.html"
         content_path.parent.mkdir(parents=True, exist_ok=True)
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <h1>Look on my Works, ye Mighty, and despair!</h1>
                 {% for page in pages|sort(attribute="url_path") %}
                 <p>{{ page.url_path }}</p>
                 {% endfor %}
-                """
-            )
+                """)
         content_path = self.working_dir / "content" / "posts" / "post1.html"
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <p>I am post 1.</p>
-                """
-            )
+                """)
         content_path = self.working_dir / "content" / "posts" / "post2.html"
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <p>I am post 2.</p>
-                """
-            )
+                """)
         content_path = self.working_dir / "content" / "posts" / "post3.html"
         with content_path.open("w") as file:
-            file.write(
-                """
+            file.write("""
                 <p>I am post 3.</p>
-                """
-            )
+                """)
 
         jinjabread.build()
 
@@ -946,8 +918,7 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
 
     def test_context_variable_precedence(self):
         with (self.working_dir / "jinjabread.toml").open("w") as file:
-            file.write(
-                """
+            file.write("""
                 [context]
                   fee = "fie"
                   foe = "fum"
@@ -969,8 +940,7 @@ class BuildSiteTest(TestTempWorkingDirMixin, TestHtmlMixin, unittest.TestCase):
                 [[pages]]
                   type = "jinjabread.Page"
                   glob_pattern = "**/*.html"
-                """
-            )
+                """)
 
         config = jinjabread.Config.load()
         site = jinjabread.Site(config)
