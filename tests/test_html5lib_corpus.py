@@ -1,7 +1,7 @@
 """Render-invariance over an external, unbiased corpus (html5lib-tests).
 
 We reuse the `expected` HTML strings from html5lib's serializer tests as inputs
-(see `corpus/html5lib/SOURCE.md`), keep only the ones lxml and html5lib parse
+(see `corpus/html5lib/README.md`), keep only the ones lxml and html5lib parse
 identically, and assert the same invariants as the rest of the suite.
 """
 
