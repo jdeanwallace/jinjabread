@@ -535,7 +535,7 @@ dev = [
     { name = "coverage" },
     { name = "html5lib" },
     { name = "hypothesis" },
-    { name = "twine", specifier = "==6.2.0" },
+    { name = "twine" },
 ]
 
 [[package]]
