@@ -5,7 +5,6 @@ import typing
 from .base import PageFactory
 from .utils import load_page_class
 
-
 CONFIG_FILENAME = "jinjabread.toml"
 
 

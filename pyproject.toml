@@ -6,9 +6,18 @@
   name = "jinjabread"
   description = "An Python-based static site generator using Jinja templates."
   dynamic = ["version"]
-  requires-python = ">=3.13"
+  requires-python = ">=3.11"
   readme = "README.md"
   license = {file = "LICENSE"}
+  # Support the current non-EOL Pythons from our floor up. The floor is 3.11
+  # because config.py uses the stdlib tomllib (added in 3.11). requires-python
+  # stays uncapped so future Pythons keep installing; the window is documented
+  # here rather than capped.
+  classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+  ]
   dependencies = [
     "jinja2==3.1.6",
     "lxml==6.1.1",
@@ -24,7 +33,7 @@
 
 [dependency-groups]
   dev = [
-    "black==25.1.0",
+    "black==26.5.1",
     "coverage",
     "html5lib",
     "hypothesis",
@@ -35,3 +44,11 @@
   packages = ["jinjabread"]
 
 [tool.setuptools_scm]
+
+[tool.black]
+  # Pin black's target to our floor instead of capping requires-python. Capping
+  # requires-python is a packaging anti-pattern (it blocks installs on future
+  # Pythons), so it stays open at >=3.11; an open range makes black target the
+  # newest Python it knows and skip its AST safety check under the 3.11 we run.
+  # 3.11's output is valid on 3.11+.
+  target-version = ["py311"]
