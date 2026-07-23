@@ -29,8 +29,8 @@ class PrettifyContractTest(unittest.TestCase):
 
     def test_keeps_preformatted_content_verbatim(self):
         """`pre`, `textarea`, `script`, and `style` content is left untouched."""
-        text = "<pre>  two  spaces\tand a tab  </pre>"
-        self.assertEqual(text + "\n", jinjabread.prettify_html(text))
+        text = "<pre>  two  spaces\tand a tab  </pre>\n"
+        self.assertEqual(text, jinjabread.prettify_html(text))
 
     def test_adds_no_wrapper_around_a_fragment(self):
         """A body-level fragment is emitted as-is, with no wrapper element added."""
