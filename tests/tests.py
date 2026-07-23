@@ -474,16 +474,18 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
         )
 
     def test_prettify_html_pre_preserved_byte_for_byte(self):
-        text = "<pre>def f():\n    return 1\n\n\n    # three blank lines above\n</pre>"
-        self.assertEqual(text + "\n", jinjabread.prettify_html(text))
+        text = (
+            "<pre>def f():\n    return 1\n\n\n    # three blank lines above\n</pre>\n"
+        )
+        self.assertEqual(text, jinjabread.prettify_html(text))
 
     def test_prettify_html_pre_code_preserved_byte_for_byte(self):
-        text = "<pre><code>a = 1\n  b = 2\n\nc = 3</code></pre>"
-        self.assertEqual(text + "\n", jinjabread.prettify_html(text))
+        text = "<pre><code>a = 1\n  b = 2\n\nc = 3</code></pre>\n"
+        self.assertEqual(text, jinjabread.prettify_html(text))
 
     def test_prettify_html_textarea_preserved_byte_for_byte(self):
-        text = "<textarea>  keep    these\n  spaces\n</textarea>"
-        self.assertEqual(text + "\n", jinjabread.prettify_html(text))
+        text = "<textarea>  keep    these\n  spaces\n</textarea>\n"
+        self.assertEqual(text, jinjabread.prettify_html(text))
 
     def test_prettify_html_script_content_not_escaped(self):
         text = "<div><script>if (a < b && c > d) { run(); }</script></div>"
