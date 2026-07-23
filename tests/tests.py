@@ -168,13 +168,20 @@ class UtilTest(TestTempWorkingDirMixin, unittest.TestCase):
     def test_prettify_html_root_text_and_inline(self):
         text = """Hello, <b>World</b>!"""
         self.assertEqual(
-            "Hello, <b>World</b>!\n",
+            """
+Hello, <b>World</b>!
+""".lstrip(),
             jinjabread.prettify_html(text),
         )
 
     def test_prettify_html_bare_text(self):
         text = """Just text."""
-        self.assertEqual("Just text.\n", jinjabread.prettify_html(text))
+        self.assertEqual(
+            """
+Just text.
+""".lstrip(),
+            jinjabread.prettify_html(text),
+        )
 
     def test_prettify_html_inline_tag_wraps_block_tag(self):
         text = """<a href="#home"><div>Hello, World!</div></a>"""
