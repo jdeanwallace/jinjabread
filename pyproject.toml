@@ -33,7 +33,7 @@
 
 [dependency-groups]
   dev = [
-    "black==26.5.1",
+    "black",
     "coverage",
     "html5lib",
     "hypothesis",
