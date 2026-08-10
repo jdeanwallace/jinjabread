@@ -480,6 +480,33 @@ Just text.
             jinjabread.prettify_html(text),
         )
 
+    def test_prettify_html_compact_elements(self):
+        text = "<table><tr><td>Cell one</td><td>Cell <a href='/x'>two</a></td></tr></table>"
+        self.assertEqual(
+            """
+<table>
+  <tr>
+    <td>Cell one</td>
+    <td>Cell <a href="/x">two</a></td>
+  </tr>
+</table>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
+    def test_prettify_html_compact_element_with_block_child_stays_expanded(self):
+        text = "<li><p>Paragraph</p></li>"
+        self.assertEqual(
+            """
+<li>
+  <p>
+    Paragraph
+  </p>
+</li>
+""".strip(),
+            jinjabread.prettify_html(text),
+        )
+
     def test_prettify_html_pre_preserved_byte_for_byte(self):
         text = (
             "<pre>def f():\n    return 1\n\n\n    # three blank lines above\n</pre>\n"
