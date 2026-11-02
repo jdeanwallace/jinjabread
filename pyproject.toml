@@ -55,6 +55,7 @@
 
 [tool.uv]
   # Take only releases at least two weeks old, so a broken or compromised release
-  # has time to be found and pulled. The farm exempts security fixes below.
+  # has time to be found and pulled. A security fix that cannot wait goes in
+  # exclude-newer-package until it is two weeks old.
   exclude-newer = "2 weeks"
   exclude-newer-package = {markdown = false}
