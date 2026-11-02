@@ -52,3 +52,9 @@
   # newest Python it knows and skip its AST safety check under the 3.11 we run.
   # 3.11's output is valid on 3.11+.
   target-version = ["py311"]
+
+[tool.uv]
+  # Take only releases at least a week old, so a broken or compromised release
+  # has time to be found and pulled. A security fix that cannot wait goes in
+  # exclude-newer-package until it is a week old.
+  exclude-newer = "1 week"
