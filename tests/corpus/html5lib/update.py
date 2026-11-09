@@ -25,7 +25,7 @@ def _fetch(url):
     request = urllib.request.Request(
         url, headers={"User-Agent": "jinjabread-corpus-updater"}
     )
-    with urllib.request.urlopen(request) as response:
+    with urllib.request.urlopen(request, timeout=30) as response:
         return response.read()
 
 
